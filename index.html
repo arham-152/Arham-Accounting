@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account 2026 — Finance Dashboard</title>
+    <script>
+      // Protection for the read-only 'fetch' property in AI Studio environment
+      (function() {
+        if (typeof window.fetch === 'function') {
+          const originalFetch = window.fetch;
+          try {
+            // Define a property with a no-op setter to prevent "getter-only" TypeErrors
+            Object.defineProperty(window, 'fetch', {
+              get: function() { return originalFetch; },
+              set: function(v) { 
+                console.warn("An external library tried to overwrite 'fetch'. This operation was intercepted to prevent a crash.");
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e) {
+            // If the environment has already locked 'fetch' beyond redefinition, 
+            // we have to hope that the Vite aliases for polyfills are catching it.
+            console.error("Critical environment lock: Unable to redefine 'fetch' property.", e);
+          }
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

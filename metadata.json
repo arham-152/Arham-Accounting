@@ -1,0 +1,6 @@
+{
+  "name": "Account 2026 Dashboard",
+  "description": "High-fidelity professional finance dashboard for tracking personal accounts, income, expenses, and borrowings from Google Sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Data Visualization", "CSV Processing", "Real-time Tracking"]
+}
