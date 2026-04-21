@@ -95,9 +95,54 @@ interface ChartsProps {
   transactions: Transaction[];
   budgets: Record<string, number>;
   activeTab: 'overview' | 'category' | 'month';
+  isDarkMode: boolean;
 }
 
-export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab }) => {
+export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab, isDarkMode }) => {
+  const textColor = isDarkMode ? '#a0a8b8' : '#64748b';
+  const gridColor = isDarkMode ? 'rgba(31,36,48,0.5)' : 'rgba(203,213,225,0.4)';
+  const tooltipBg = isDarkMode ? '#1e2330' : '#ffffff';
+  const tooltipBorder = isDarkMode ? '#2a3040' : '#e2e8f0';
+
+  const themeOptions = useMemo(() => ({
+    ...commonOptions,
+    plugins: {
+      ...commonOptions.plugins,
+      legend: {
+        ...commonOptions.plugins.legend,
+        labels: {
+          ...commonOptions.plugins.legend.labels,
+          color: textColor
+        }
+      },
+      tooltip: {
+        ...commonOptions.plugins.tooltip,
+        backgroundColor: tooltipBg,
+        titleColor: isDarkMode ? '#e8eaf0' : '#1e293b',
+        bodyColor: textColor,
+        borderColor: tooltipBorder,
+      }
+    },
+    scales: {
+      x: {
+        ...commonOptions.scales.x,
+        ticks: { ...commonOptions.scales.x.ticks, color: textColor },
+        grid: { color: gridColor }
+      },
+      y: {
+        ...commonOptions.scales.y,
+        ticks: { ...commonOptions.scales.y.ticks, color: textColor },
+        grid: { color: gridColor }
+      },
+      r: {
+        angleLines: { color: gridColor },
+        grid: { color: gridColor },
+        pointLabels: { color: textColor, font: { size: 9 } },
+        ticks: { display: false }
+      }
+    }
+  }), [isDarkMode, textColor, gridColor, tooltipBg, tooltipBorder]);
+
   const activeMonths = useMemo(() => {
     return MONTH_NAMES.filter(m => transactions.some(r => r.month === m))
       .sort((a, b) => MONTH_NAMES.indexOf(a) - MONTH_NAMES.indexOf(b));
@@ -242,23 +287,21 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
         borderWidth: 2,
       }]
     };
-  }, [transactions]);
-
-  const renderOverview = () => (
+  }, [transactions]);  const renderOverview = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
       <ChartCard title="Income vs Expense vs Borrow" sub="Monthly financial flow grouped comparison" delay={0.1}>
-        <Bar data={compData} options={commonOptions} />
+        <Bar data={compData} options={themeOptions} />
       </ChartCard>
 
       <ChartCard title="Cumulative Spending Over Time" sub="Running total of all expenses by date" delay={0.2}>
         <Line data={cumulativeData as any} options={{
-          ...commonOptions,
+          ...themeOptions,
           scales: {
-            ...commonOptions.scales,
+            ...themeOptions.scales,
             y: {
-              ...commonOptions.scales.y,
+              ...themeOptions.scales.y,
               ticks: {
-                ...commonOptions.scales.y.ticks,
+                ...themeOptions.scales.y.ticks,
                 callback: (value: any) => `₨${Math.round(value/1000)}k`
               }
             }
@@ -267,48 +310,38 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
       </ChartCard>
 
       <ChartCard title="Category Intensity" sub="Multi-dimensional spending focal points" delay={0.3} height={300}>
-        <Radar data={radarData} options={{
-          ...commonOptions,
-          scales: {
-            r: {
-              angleLines: { color: 'rgba(31,36,48,0.5)' },
-              grid: { color: 'rgba(31,36,48,0.5)' },
-              pointLabels: { color: '#6b7280', font: { size: 9 } },
-              ticks: { display: false }
-            }
-          }
-        }} />
+        <Radar data={radarData} options={themeOptions} />
       </ChartCard>
 
       <ChartCard title="Monthly Performance Highlights" sub="Revenue vs Expenses trajectory" delay={0.4}>
         <Line data={revenueTrendData} options={{
-          ...commonOptions,
+          ...themeOptions,
           scales: {
-            ...commonOptions.scales,
-            x: { ...commonOptions.scales.x, title: { display: true, text: 'Month', color: '#6b7280', font: { size: 10, weight: 'bold' } } },
-            y: { ...commonOptions.scales.y, title: { display: true, text: 'Amount', color: '#6b7280', font: { size: 10, weight: 'bold' } } }
+            ...themeOptions.scales,
+            x: { ...themeOptions.scales.x, title: { display: true, text: 'Month', color: textColor, font: { size: 10, weight: 'bold' } } },
+            y: { ...themeOptions.scales.y, title: { display: true, text: 'Amount', color: textColor, font: { size: 10, weight: 'bold' } } }
           }
         }} />
       </ChartCard>
 
       <ChartCard title="Monthly Category Spending Trend" sub="Detailed expense categories tracked over time" delay={0.5}>
-        <Line data={lineData} options={commonOptions} />
+        <Line data={lineData} options={themeOptions} />
       </ChartCard>
       
       <ChartCard title="Category Allocation" sub="Proportional breakdown of total spending" delay={0.6}>
         <Doughnut 
           data={donutData} 
           options={{
-            ...commonOptions,
+            ...themeOptions,
             cutout: '65%',
             plugins: {
-              ...commonOptions.plugins,
+              ...themeOptions.plugins,
               legend: {
-                ...commonOptions.plugins.legend,
+                ...themeOptions.plugins.legend,
                 position: 'right' as const
               },
               tooltip: {
-                ...commonOptions.plugins.tooltip,
+                ...themeOptions.plugins.tooltip,
                 callbacks: {
                   label: (c: any) => ` ${formatPKR(c.parsed)} (${getPercentage(c.parsed, totalSpend)})`
                 }
@@ -319,12 +352,12 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
       </ChartCard>
 
       <ChartCard title="Stacked Monthly Composition" sub="Category layering per month" delay={0.7}>
-        <Bar data={stackedData} options={commonOptions} />
+        <Bar data={stackedData} options={themeOptions} />
       </ChartCard>
 
       <ChartCard title="Payment Channel Distribution" sub="Cash vs Digital payment volumes" delay={0.8}>
-         <PolarArea 
-           data={{
+        <PolarArea 
+          data={{
             labels: ['Cash Exp', 'Jazz Exp', 'Cash Inc', 'Jazz Inc'],
             datasets: [{
               data: [
@@ -338,15 +371,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
               borderWidth: 1.5
             }]
           }}
-          options={{
-            ...commonOptions,
-            scales: {
-              r: {
-                ticks: { backdropColor: 'transparent', color: '#6b7280', font: { size: 8 } },
-                grid: { color: 'rgba(31,36,48,0.5)' }
-              }
-            }
-          }}
+          options={themeOptions}
         />
       </ChartCard>
     </div>
@@ -369,8 +394,8 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
         return (
           <ChartCard key={cat} title={cat} sub={`Monthly trend for ${cat.toLowerCase()} expenses`} height={200}>
             <Bar data={data} options={{
-              ...commonOptions,
-              plugins: { ...commonOptions.plugins, legend: { display: false } }
+              ...themeOptions,
+              plugins: { ...themeOptions.plugins, legend: { display: false } }
             }} />
           </ChartCard>
         );
@@ -396,8 +421,8 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
         return (
           <ChartCard key={month} title={month.toUpperCase()} sub={`Category-wise breakdown for ${month}`} height={240}>
             <Bar data={data} options={{
-              ...commonOptions,
-              plugins: { ...commonOptions.plugins, legend: { display: false } }
+              ...themeOptions,
+              plugins: { ...themeOptions.plugins, legend: { display: false } }
             }} />
           </ChartCard>
         );

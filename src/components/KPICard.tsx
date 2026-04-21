@@ -38,7 +38,7 @@ export const KPICard: React.FC<KPICardProps> = ({ label, value, subText, icon, c
       
       <div className="relative z-10 flex items-center gap-2 mb-2">
         <div className="text-xl transformation group-hover:scale-110 transition-transform duration-300">{icon}</div>
-        <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{label}</div>
+        <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{label}</div>
       </div>
       
       <div className={cn("relative z-10 font-mono text-2xl font-semibold mb-1", colorClass.replace('bg-', 'text-'))}>
@@ -49,7 +49,7 @@ export const KPICard: React.FC<KPICardProps> = ({ label, value, subText, icon, c
         )}
       </div>
       
-      <div className="relative z-10 text-[11px] text-gray-400 font-mono mt-auto flex justify-between items-end">
+      <div className="relative z-10 text-[11px] text-text-muted font-mono mt-auto flex justify-between items-end">
         <span>{subText}</span>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <motion.div

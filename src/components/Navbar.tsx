@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2, FileDown, Printer, Database, FileText, RefreshCw } from 'lucide-react';
+import { Share2, FileDown, Printer, Database, FileText, RefreshCw, Sun, Moon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -8,8 +8,9 @@ interface NavbarProps {
   onUploadClick: () => void;
   onExportCSV: () => void;
   onReportClick: () => void;
-  onPrintClick: () => void;
   onRefreshClick: () => void;
+  isDarkMode: boolean;
+  onThemeToggle: () => void;
   lastUpdated: string;
   status?: 'online' | 'offline';
   activeView: 'dashboard' | 'register';
@@ -21,8 +22,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onUploadClick, 
   onExportCSV, 
   onReportClick,
-  onPrintClick,
   onRefreshClick,
+  isDarkMode,
+  onThemeToggle,
   lastUpdated,
   status = 'online',
   activeView,
@@ -45,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onViewChange('dashboard')}
             className={cn(
               "relative z-10 px-6 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all",
-              activeView === 'dashboard' ? "text-black" : "text-gray-500 hover:text-white"
+              activeView === 'dashboard' ? "text-black" : "text-text-muted hover:text-text-primary"
             )}
           >
             Dashboard & Graphs
@@ -61,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onViewChange('register')}
             className={cn(
               "relative z-10 px-6 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all",
-              activeView === 'register' ? "text-black" : "text-gray-500 hover:text-white"
+              activeView === 'register' ? "text-black" : "text-text-muted hover:text-text-primary"
             )}
           >
             Transaction Register
@@ -100,7 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button 
           onClick={onRefreshClick}
-          className="p-2 rounded-lg border border-border-main text-gray-500 transition-all hover:text-white active:scale-95 hover:bg-surface-brighter group"
+          className="p-2 rounded-lg border border-border-main text-text-muted transition-all hover:text-text-primary active:scale-95 hover:bg-surface-brighter group"
           title="Refresh Data from Sheet"
         >
           <RefreshCw size={16} className="group-active:rotate-180 transition-transform duration-500" />
@@ -109,17 +111,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-1.5 border-l border-border-main pl-4">
           <button 
             onClick={onExportCSV}
-            className="p-2 rounded-lg border border-border-main text-gray-500 transition-all hover:text-white active:scale-90"
+            className="p-2 rounded-lg border border-border-main text-text-muted transition-all hover:text-text-primary active:scale-90"
             title="Export CSV"
           >
             <FileDown size={18} />
           </button>
           <button 
-            onClick={onPrintClick}
-            className="p-2 rounded-lg border border-border-main text-gray-500 transition-all hover:text-white active:scale-90"
-            title="Print View"
+            onClick={onThemeToggle}
+            className="p-2 rounded-lg border border-border-main text-text-muted transition-all hover:text-text-primary active:scale-90"
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
-            <Printer size={18} />
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
       </div>

@@ -71,15 +71,27 @@ export const generatePDFReport = (transactions: Transaction[], title: string) =>
   doc.text(`Total Transactions: ${transactions.length}`, 15, finalY);
   doc.text(`Total Income: ${formatPKR(income)}`, 15, finalY + 5);
   doc.text(`Total Expense: ${formatPKR(expense)}`, 15, finalY + 10);
-  doc.text(`Net: ${formatPKR(income - expense)}`, 15, finalY + 15);
+  const saving = transactions.filter(t => t.type === 'SAVING').reduce((s, t) => s + t.amount, 0);
+  doc.text(`Total Savings: ${formatPKR(saving)}`, 15, finalY + 15);
+  doc.text(`Net: ${formatPKR(income - expense)}`, 15, finalY + 20);
 
   doc.save(`Financial_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };
 
 export const generateExcelReport = (transactions: Transaction[], title: string) => {
+  const income = transactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
+  const expense = transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
+  const saving = transactions.filter(t => t.type === 'SAVING').reduce((s, t) => s + t.amount, 0);
+
   const worksheetData = [
     [title.toUpperCase()],
     [`Generated on ${format(new Date(), 'PPpp')}`],
+    [],
+    ['SUMMARY'],
+    ['Total Income', income],
+    ['Total Expense', expense],
+    ['Total Savings', saving],
+    ['Net Balance', income - expense],
     [],
     ['Date', 'Reference', 'Category', 'Type', 'Amount', 'From', 'To', 'Notes'],
     ...transactions.map(t => [

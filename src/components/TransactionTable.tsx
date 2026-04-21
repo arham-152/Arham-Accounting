@@ -30,11 +30,11 @@ const TransactionDetailModal: React.FC<{
           <div className="p-6 border-b border-border-main flex justify-between items-start">
             <div className="flex flex-col gap-1">
               <h3 className="text-xl font-display font-extrabold tracking-tight">Transaction details</h3>
-              <p className="text-xs text-gray-500 font-mono">Reference ID: #{transaction.sr}</p>
+              <p className="text-xs text-text-muted font-mono">Reference ID: #{transaction.sr}</p>
             </div>
             <button 
               onClick={onClose}
-              className="p-2 hover:bg-surface-brighter rounded-full transition-colors text-gray-500 hover:text-white"
+              className="p-2 hover:bg-surface-brighter rounded-full transition-colors text-text-muted hover:text-text-primary"
             >
               <X size={20} />
             </button>
@@ -48,7 +48,7 @@ const TransactionDetailModal: React.FC<{
              <h2 className={cn("text-4xl font-display font-black tracking-tighter", typeColor)}>
                {formatPKR(transaction.amount)}
              </h2>
-             <p className="text-sm font-medium text-gray-400 max-w-[80%] line-clamp-2">{transaction.name}</p>
+             <p className="text-sm font-medium text-text-muted max-w-[80%] line-clamp-2">{transaction.name}</p>
           </div>
 
           {/* Details Grid */}
@@ -58,7 +58,7 @@ const TransactionDetailModal: React.FC<{
                  <Calendar size={18} />
                </div>
                <div className="flex flex-col">
-                 <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Date</span>
+                 <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider">Date</span>
                  <span className="text-sm font-semibold">{transaction.date}</span>
                </div>
              </div>
@@ -68,7 +68,7 @@ const TransactionDetailModal: React.FC<{
                  <Tag size={18} />
                </div>
                <div className="flex flex-col">
-                 <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Category</span>
+                 <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider">Category</span>
                  <span className="text-sm font-semibold">{transaction.category}</span>
                </div>
              </div>
@@ -78,7 +78,7 @@ const TransactionDetailModal: React.FC<{
                  <ArrowDownRight size={18} />
                </div>
                <div className="flex flex-col">
-                 <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Source (From)</span>
+                 <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider">Source (From)</span>
                  <span className="text-sm font-semibold uppercase">{transaction.from}</span>
                </div>
              </div>
@@ -88,7 +88,7 @@ const TransactionDetailModal: React.FC<{
                  <ArrowUpRight size={18} />
                </div>
                <div className="flex flex-col">
-                 <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Target (To)</span>
+                 <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider">Target (To)</span>
                  <span className="text-sm font-semibold uppercase">{transaction.to}</span>
                </div>
              </div>
@@ -98,13 +98,13 @@ const TransactionDetailModal: React.FC<{
           <div className="px-6 pb-8">
             <div className="p-4 bg-surface-brighter rounded-xl border border-border-main flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Info size={14} className="text-gray-500" />
-                <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Notes & Meta</span>
+                <Info size={14} className="text-text-muted" />
+                <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider">Notes & Meta</span>
               </div>
-              <p className="text-sm text-gray-300 italic">
+              <p className="text-sm text-text-primary italic whitespace-pre-wrap">
                 {transaction.notes || "No additional notes provided for this transaction."}
               </p>
-              <div className="mt-2 pt-2 border-t border-border-main/50 flex gap-4 text-[10px] text-gray-500 font-mono">
+              <div className="mt-2 pt-2 border-t border-border-main/50 flex gap-4 text-[10px] text-text-muted font-mono">
                  <span>Year: {transaction.year}</span>
                  <span>Month: {transaction.month}</span>
               </div>
@@ -177,12 +177,16 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
     if (!ledgerModeCategory) return [];
     
     const categoryTransactions = transactions.filter(t => t.category === ledgerModeCategory);
-    const summaryMap: Record<string, { totalActivity: number; balance: number; firstSr: number; firstNotes: string }> = {};
+    const summaryMap: Record<string, { totalActivity: number; balance: number; recentSr: number; recentNotes: string }> = {};
     
     categoryTransactions.forEach(t => {
       const name = t.name || 'Unknown';
       if (!summaryMap[name]) {
-        summaryMap[name] = { totalActivity: 0, balance: 0, firstSr: t.sr, firstNotes: t.notes || 'No notes available' };
+        summaryMap[name] = { totalActivity: 0, balance: 0, recentSr: t.sr, recentNotes: t.notes || 'No notes available' };
+      } else {
+        // Update to show the most recent entry (highest SR usually stays last)
+        summaryMap[name].recentSr = t.sr;
+        summaryMap[name].recentNotes = t.notes || 'No notes available';
       }
       summaryMap[name].totalActivity += t.amount;
       
@@ -235,6 +239,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
     return { totalOwed: owes, totalGets: gets, net: gets - owes };
   }, [transactions, ledgerModeCategory]);
 
+  const registerSummary = useMemo(() => {
+    const income = filteredTransactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
+    const expense = filteredTransactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
+    const saving = filteredTransactions.filter(t => t.type === 'SAVING').reduce((s, t) => s + t.amount, 0);
+    return { income, expense, saving, net: (income - expense) };
+  }, [filteredTransactions]);
+
   const requestSort = (key: keyof Transaction) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -258,8 +269,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
       <div className="dashboard-card p-0 overflow-hidden flex flex-col">
         <div className="p-5 border-b border-border-main flex justify-between items-center bg-surface/50">
           <div className="flex items-center gap-3">
-            <h3 className="text-sm font-bold m-0">Transaction Register</h3>
-            <span className="font-mono text-[10px] text-gray-500 px-2 py-0.5 bg-surface-brighter rounded border border-border-main">
+            <h3 className="text-sm font-bold m-0 text-text-primary">Transaction Register</h3>
+            <span className="font-mono text-[10px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main">
               {filteredTransactions.length} of {transactions.length} entries
             </span>
           </div>
@@ -272,13 +283,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 onChange={(e) => setShowSummary(e.target.checked)}
                 className="w-4 h-4 rounded border-border-main bg-surface-brighter text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
               />
-              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-gray-400 group-hover:text-white transition-colors cursor-pointer uppercase tracking-widest">
+              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-text-muted group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest">
                 Summary
               </label>
             </div>
 
             <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-lg border border-border-main">
-              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Ledger Mode:</span>
+              <span className="text-[9px] font-black text-text-muted uppercase tracking-widest">Ledger Mode:</span>
               <select 
                 value={ledgerModeCategory || ''} 
                 onChange={(e) => setLedgerModeCategory(e.target.value || null)}
@@ -291,13 +302,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
               </select>
             </div>
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input 
                 type="text" 
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
                 placeholder="Search register..."
-                className="bg-surface-brighter border border-border-main text-gray-200 text-xs pl-9 pr-3 py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors w-64"
+                className="bg-surface-brighter border border-border-main text-text-primary text-xs pl-9 pr-3 py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors w-64"
               />
             </div>
           </div>
@@ -307,27 +318,27 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-10 bg-surface-brightest shadow-sm">
               <tr>
-                <th onClick={() => requestSort('sr')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-200 transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('sr')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1"># {getSortIcon('sr')}</div>
                 </th>
-                <th onClick={() => requestSort('date')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-200 transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('date')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Date {getSortIcon('date')}</div>
                 </th>
-                <th onClick={() => requestSort('name')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-200 transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('name')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Reference {getSortIcon('name')}</div>
                 </th>
-                <th onClick={() => requestSort('amount')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-200 transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('amount')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Amount {getSortIcon('amount')}</div>
                 </th>
-                <th onClick={() => requestSort('category')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-200 transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('category')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Category {getSortIcon('category')}</div>
                 </th>
-                <th onClick={() => requestSort('type')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-200 transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('type')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Type {getSortIcon('type')}</div>
                 </th>
-                <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 whitespace-nowrap">From</th>
-                <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 whitespace-nowrap">To</th>
-                <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-gray-500 whitespace-nowrap">Notes</th>
+                <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted whitespace-nowrap">From</th>
+                <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted whitespace-nowrap">To</th>
+                <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted whitespace-nowrap">Notes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-main">
@@ -341,13 +352,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                     onClick={() => setSelectedTransaction(r)}
-                    className={cn("hover:bg-accent-gold/[0.05] transition-colors cursor-pointer group", idx % 2 === 0 ? "bg-transparent" : "bg-white/[0.01]")}
+                    className={cn("hover:bg-accent-gold/[0.05] transition-colors cursor-pointer group", idx % 2 === 0 ? "bg-transparent" : "bg-surface-brighter/40")}
                   >
-                    <td className="p-3 font-mono text-[10px] text-gray-500">{r.sr}</td>
-                    <td className="p-3 font-mono text-[10px] whitespace-nowrap">{r.date || '—'}</td>
-                    <td className="p-3 font-semibold truncate max-w-[180px]" title={r.name}>{r.name || '—'}</td>
+                    <td className="p-3 font-mono text-[10px] text-text-muted">{r.sr}</td>
+                    <td className="p-3 font-mono text-[10px] whitespace-nowrap text-text-secondary">{r.date || '—'}</td>
+                    <td className="p-3 font-semibold truncate max-w-[180px] text-text-primary" title={r.name}>{r.name || '—'}</td>
                     <td className={cn("p-3 font-mono font-medium", 
-                      r.type === 'DEBIT' ? "text-income" : r.type === 'CREDIT' ? "text-expense" : "text-gray-400"
+                      r.type === 'DEBIT' ? "text-income" : r.type === 'CREDIT' ? "text-expense" : "text-text-muted"
                     )}>
                       {formatPKR(r.amount)}
                     </td>
@@ -371,14 +382,52 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                         {r.type}
                       </span>
                     </td>
-                    <td className="p-3 text-[10px] text-gray-400 capitalize">{r.from}</td>
+                    <td className="p-3 text-[10px] text-text-muted capitalize">{r.from}</td>
                     <td className="p-3 text-[10px] text-accent-gold/80 font-medium capitalize">{r.to}</td>
-                    <td className="p-3 text-[10px] text-gray-500 truncate max-w-[120px]" title={r.notes}>{r.notes || '—'}</td>
+                    <td className="p-3 text-[10px] text-text-primary font-medium whitespace-pre-wrap max-w-[200px]" title={r.notes}>{r.notes || '—'}</td>
                   </motion.tr>
                 ))}
               </AnimatePresence>
             </tbody>
           </table>
+        </div>
+        
+        {/* Register Summary Footer */}
+        <div className="p-4 bg-surface border-t border-border-main flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Total Income</span>
+              <span className="text-sm font-mono font-bold text-income">{formatPKR(registerSummary.income)}</span>
+            </div>
+            <div className="w-px h-8 bg-border-main" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Total Expense</span>
+              <span className="text-sm font-mono font-bold text-expense">{formatPKR(registerSummary.expense)}</span>
+            </div>
+            <div className="w-px h-8 bg-border-main" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Savings</span>
+              <span className="text-sm font-mono font-bold text-saving">{formatPKR(registerSummary.saving)}</span>
+            </div>
+          </div>
+          
+          <div className="px-6 py-3 bg-surface-brighter rounded-xl border border-border-main flex items-center gap-4">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Net Filtered Balance</span>
+              <span className={cn(
+                "text-xl font-display font-black tracking-tighter",
+                registerSummary.net >= 0 ? "text-income" : "text-expense"
+              )}>
+                {formatPKR(registerSummary.net)}
+              </span>
+            </div>
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center shadow-lg",
+              registerSummary.net >= 0 ? "bg-income text-black" : "bg-expense text-white"
+            )}>
+              <Wallet size={20} />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -390,17 +439,17 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
               {borrowStats && (
                 <div className="flex items-center gap-4 mt-2">
                    <div className="flex flex-col">
-                      <span className="text-[9px] uppercase font-bold text-gray-500 tracking-widest">Total Owed</span>
+                      <span className="text-[9px] uppercase font-bold text-text-muted tracking-widest">Total Owed</span>
                       <span className="text-sm font-mono font-bold text-expense">{formatPKR(borrowStats.totalOwed)}</span>
                    </div>
                    <div className="w-px h-6 bg-border-main" />
                    <div className="flex flex-col">
-                      <span className="text-[9px] uppercase font-bold text-gray-500 tracking-widest">To be Received</span>
+                      <span className="text-[9px] uppercase font-bold text-text-muted tracking-widest">To be Received</span>
                       <span className="text-sm font-mono font-bold text-income">{formatPKR(borrowStats.totalGets)}</span>
                    </div>
                    <div className="w-px h-6 bg-border-main" />
                    <div className="flex flex-col">
-                      <span className="text-[9px] uppercase font-bold text-gray-500 tracking-widest">Net Position</span>
+                      <span className="text-[9px] uppercase font-bold text-text-muted tracking-widest">Net Position</span>
                       <span className={cn("text-sm font-mono font-bold", borrowStats.net >= 0 ? "text-income" : "text-expense")}>
                         {formatPKR(Math.abs(borrowStats.net))} {borrowStats.net >= 0 ? 'Surplus' : 'Deficit'}
                       </span>
@@ -411,7 +460,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             
             <div className="flex items-center gap-3 bg-surface-brighter p-1.5 rounded-xl border border-border-main">
                <div className="flex items-center gap-1">
-                  <span className="text-[9px] font-bold text-gray-500 uppercase ml-2 mr-1">Sort:</span>
+                  <span className="text-[9px] font-bold text-text-muted uppercase ml-2 mr-1">Sort:</span>
                   <select 
                     value={borrowSort} 
                     onChange={(e) => setBorrowSort(e.target.value as any)}
@@ -426,7 +475,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                   <>
                     <div className="w-px h-4 bg-border-main" />
                     <div className="flex items-center gap-1">
-                        <span className="text-[9px] font-bold text-gray-500 uppercase ml-1 mr-1">Filter:</span>
+                        <span className="text-[9px] font-bold text-text-muted uppercase ml-1 mr-1">Filter:</span>
                         <div className="flex gap-1 pr-1">
                           {['all', 'owes', 'gets', 'clear'].map(f => (
                             <button 
@@ -434,7 +483,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                               onClick={() => setBorrowFilter(f as any)}
                               className={cn(
                                 "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all",
-                                borrowFilter === f ? "bg-accent-gold text-black" : "text-gray-500 hover:text-white"
+                                borrowFilter === f ? "bg-accent-gold text-black" : "text-text-muted hover:text-text-primary"
                               )}
                             >
                               {f}
@@ -454,25 +503,25 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                        <div className="relative group/sr">
-                          <span className="text-[10px] text-gray-600 font-mono hover:text-accent-gold transition-colors">({item.firstSr}#)</span>
+                          <span className="text-[10px] text-text-muted transition-colors">({item.recentSr}#)</span>
                           {/* Hover Pop-up for Notes */}
                           <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-surface-brightest border border-border-main rounded-lg shadow-2xl opacity-0 invisible group-hover/sr:opacity-100 group-hover/sr:visible transition-all z-20 pointer-events-none">
-                             <div className="text-[8px] uppercase font-bold text-accent-gold mb-1 tracking-widest">Initial Notes</div>
-                             <p className="text-[10px] text-gray-300 italic line-clamp-4 leading-relaxed">
-                               {item.firstNotes}
+                             <div className="text-[8px] uppercase font-bold text-accent-gold mb-1 tracking-widest">Recent Notes</div>
+                             <p className="text-[10px] text-text-primary italic line-clamp-4 leading-relaxed">
+                               {item.recentNotes}
                              </p>
                           </div>
                        </div>
                        <span className="font-bold text-sm tracking-tight group-hover:text-accent-gold transition-colors">{item.name}</span>
                     </div>
-                    <span className="text-[10px] text-gray-500 font-mono">
-                      {ledgerModeCategory === 'BORROW' ? 'Activity' : 'Volume'}: <span className="text-gray-400">₨ {item.totalActivity.toLocaleString()}</span>
+                    <span className="text-[10px] text-text-muted font-mono">
+                      {ledgerModeCategory === 'BORROW' ? 'Activity' : 'Volume'}: <span className="text-text-secondary">₨ {item.totalActivity.toLocaleString()}</span>
                     </span>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className={cn(
                       "text-[10px] font-black uppercase tracking-[2px] mb-1",
-                      item.balance > 0 ? "text-income" : item.balance < 0 ? "text-expense" : "text-gray-500"
+                      item.balance > 0 ? "text-income" : item.balance < 0 ? "text-expense" : "text-text-muted"
                     )}>
                       {ledgerModeCategory === 'BORROW' 
                         ? (item.balance > 0 ? 'GETS' : item.balance < 0 ? 'OWES' : 'CLEAR')
@@ -481,7 +530,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     </span>
                     <span className={cn(
                       "text-sm font-mono font-bold",
-                      item.balance > 0 ? "text-income" : item.balance < 0 ? "text-expense" : "text-gray-500"
+                      item.balance > 0 ? "text-income" : item.balance < 0 ? "text-expense" : "text-text-muted"
                     )}>
                       Rs {Math.abs(item.balance).toLocaleString()}
                     </span>

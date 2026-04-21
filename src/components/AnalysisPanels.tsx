@@ -73,7 +73,7 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
           {catAnalysis.map(({ cat, total, count }) => (
             <div key={cat} className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center text-[10px]">
-                <span className="font-bold text-gray-300">{cat}</span>
+                <span className="font-bold text-text-primary">{cat}</span>
                 <span className="font-mono text-accent-gold">{formatPKR(total)}</span>
               </div>
               <div className="flex items-center gap-3">
@@ -102,9 +102,9 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
             return (
               <div key={name} className="flex justify-between items-center p-3 bg-surface-brighter border border-border-main rounded-xl hover:border-border-hover transition-colors">
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-gray-200">{name}</span>
+                  <span className="text-xs font-bold text-text-primary">{name}</span>
                   <div className="flex gap-3 text-[9px] font-mono mt-0.5">
-                    <span className="text-gray-500">Activity: {formatPKR(g + r)}</span>
+                    <span className="text-text-muted">Activity: {formatPKR(g + r)}</span>
                   </div>
                 </div>
                 <div className={cn("text-xs font-mono font-bold", net > 0 ? "text-expense" : "text-income")}>
@@ -131,8 +131,8 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
               </thead>
               <tbody className="divide-y divide-border-main/50">
                 {monthlySummaries.map(row => (
-                  <tr key={row.m} className="group hover:bg-white/[0.02]">
-                    <td className="py-2.5 px-2 font-bold text-gray-400 group-hover:text-gray-200">{row.m.slice(0, 3)}</td>
+                  <tr key={row.m} className="group hover:bg-surface-brighter">
+                    <td className="py-2.5 px-2 font-bold text-text-secondary group-hover:text-text-primary">{row.m.slice(0, 3)}</td>
                     <td className="py-2.5 px-2 font-mono text-income">{formatPKR(row.inc)}</td>
                     <td className="py-2.5 px-2 font-mono text-expense">{formatPKR(row.exp)}</td>
                     <td className={cn("py-2.5 px-2 font-mono font-bold", row.net >= 0 ? "text-teal-main" : "text-expense")}>
@@ -151,12 +151,12 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
         <div className="grid grid-cols-2 gap-4 flex-1">
           {insights.map((ins, i) => (
             <div key={i} className="bg-surface-brighter border border-border-main p-4 rounded-xl">
-              <div className="flex items-center gap-2 text-gray-500 mb-1">
+              <div className="flex items-center gap-2 text-text-muted mb-1">
                 {ins.icon}
                 <span className="text-[9px] font-bold uppercase tracking-wider">{ins.label}</span>
               </div>
               <div className="text-sm font-bold text-accent-gold font-mono">{ins.value}</div>
-              <div className="text-[10px] text-gray-400 mt-1 leading-tight">{ins.sub}</div>
+              <div className="text-[10px] text-text-muted mt-1 leading-tight">{ins.sub}</div>
             </div>
           ))}
         </div>

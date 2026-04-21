@@ -79,14 +79,18 @@ export function parseTransactionData(csvText: string): Transaction[] {
   });
 
   const data = (result.data as any[]).map((row, i) => {
-    // Column Mapping (Incase of shifted names)
+    // Column Mapping (Incase of shifted names or extra spaces)
     const getVal = (keys: string[]) => {
+      // First try exact or case-insensitive match on the keys provided
       for (const k of keys) {
-        if (row[k]) return row[k];
-        const lowerK = k.toLowerCase();
-        if (row[lowerK]) return row[lowerK];
-        const upperK = k.toUpperCase();
-        if (row[upperK]) return row[upperK];
+        if (row[k] !== undefined && row[k] !== null) return row[k];
+        
+        // Try to find a key in the row that matches (trimmed and case-insensitive)
+        const rowKeys = Object.keys(row);
+        const match = rowKeys.find(rk => 
+          rk.trim().toUpperCase() === k.toUpperCase()
+        );
+        if (match) return row[match];
       }
       return '';
     };
@@ -106,7 +110,7 @@ export function parseTransactionData(csvText: string): Transaction[] {
     }
     
     const type = (String(getVal(['TYPE', 'Type']) || '').trim().toUpperCase() || 'DEBIT') as TransactionType;
-    const fromRaw = (String(getVal(['FROM', 'From']) || '').trim().toLowerCase());
+    const fromRaw = (String(getVal(['FROM', 'From', 'FRO']) || '').trim().toLowerCase());
     let from: string = 'OTHER';
     if (fromRaw.includes('jazz')) {
       from = 'Jazz-Cash';
@@ -126,17 +130,34 @@ export function parseTransactionData(csvText: string): Transaction[] {
       to = toRaw.toUpperCase();
     }
     
+    const notesKeys = ['NOTES', 'Notes', 'REMARK', 'REMARKS', 'META', 'DETAILS'];
+    let notes = String(getVal(notesKeys) || '').trim();
+    
+    // Fallback: If notes specifically are empty but there's an orphan 9th column (index 8) 
+    // This happens when cell I1 is empty but column I has data.
+    if (!notes) {
+      const rowKeys = Object.keys(row);
+      if (rowKeys.length >= 9) {
+        // Find the 9th key (index 8)
+        const orphanKey = rowKeys[8];
+        const orphanVal = String(row[orphanKey] || '').trim();
+        if (orphanVal) {
+          notes = orphanVal;
+        }
+      }
+    }
+    
     return {
-      sr: parseInt(getVal(['SR', 'Sr'])) || i + 1,
+      sr: parseInt(getVal(['SR', 'Sr', 'SERIAL', '#'])) || i + 1,
       date,
       rawDate,
-      name: (String(getVal(['NAME', 'Name']) || '').trim()),
+      name: (String(getVal(['NAME', 'Name', 'REFERENCE', 'DESCRIPTION']) || '').trim()),
       amount,
       category,
       type,
       from,
       to,
-      notes: (String(getVal(['NOTES', 'Notes']) || '').trim()),
+      notes,
       month: getMonthName(date),
       year: date ? date.split('-')[0] : '',
     };

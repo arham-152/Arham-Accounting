@@ -79,7 +79,10 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-4 h-4 rounded-full bg-accent-gold/20 text-accent-gold flex items-center justify-center text-[9px] font-bold mt-0.5 shrink-0">2</div>
-                  <span>Set <b>General access</b> to "Anyone with the link" as Viewer</span>
+                  <div>
+                    <span>Set <b>General access</b> to "Anyone with the link" as Viewer</span>
+                    <p className="text-[10px] text-gray-500 mt-1 italic">Note: If hosted on Netlify, use <b>File → Share → Publish to web</b> for best results.</p>
+                  </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-4 h-4 rounded-full bg-accent-gold/20 text-accent-gold flex items-center justify-center text-[9px] font-bold mt-0.5 shrink-0">3</div>

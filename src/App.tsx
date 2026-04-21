@@ -35,7 +35,20 @@ export default function App() {
   const [csvUrl, setCsvUrl] = useState(getGoogleSheetCsvUrl(DEFAULT_SHEET_ID, '0', 'A1:I', 'Sheet1'));
   const [dataSource, setDataSource] = useState<'live' | 'file'>('live');
   const [aiLoading, setAiLoading] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('account2026_theme');
+    return saved ? saved === 'dark' : true; // Default to dark
+  });
   const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('account2026_privacy') === 'true');
+
+  useEffect(() => {
+    localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     localStorage.setItem('account2026_privacy', hideAmounts.toString());
@@ -74,31 +87,60 @@ export default function App() {
         throw new Error("Financial engine failure: 'fetch' is not supported in this environment.");
       }
 
+      let res: Response;
+      let resText = '';
+      let isUsingProxy = true;
+
       // Use our server-side proxy to avoid CORS issues
       const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
       console.log(`[Sync] Requesting data via proxy: ${proxyUrl}`);
       
-      const res = await window.fetch(`${proxyUrl}&cb=${Date.now()}`);
+      try {
+        res = await window.fetch(`${proxyUrl}&cb=${Date.now()}`);
+        
+        // If we get a 404 on the proxy route itself, it means we are likely on a static host (Netlify/Vercel)
+        // without the associated backend. In this case, we MUST try a direct fetch.
+        if (res.status === 404) {
+          console.warn('[Sync] Proxy endpoint not found (404). Switching to direct fetch fallback...');
+          isUsingProxy = false;
+          res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
+        }
+      } catch (proxyErr) {
+        console.warn('[Sync] Proxy request failed. Attempting direct fetch fallback...', proxyErr);
+        isUsingProxy = false;
+        res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
+      }
+
       const clone = res.clone();
       
-      let resText = '';
-      try {
-        const data = await res.json();
+      if (isUsingProxy) {
+        try {
+          const data = await res.json();
+          if (!res.ok) {
+            let msg = data?.details || data?.error || `HTTP ${res.status}`;
+            if (res.status === 400) msg = "Invalid Spreadsheet URL. Please ensure you provided a valid Google Sheets link.";
+            if (res.status === 401) msg = "Access Denied. Ensure your Sheet's Sharing settings is 'Anyone with the link' as Viewer.";
+            throw new Error(msg);
+          }
+          resText = typeof data === 'string' ? data : JSON.stringify(data);
+        } catch (e: any) {
+          if (e.message.includes('HTTP') || e.message.includes('Access Denied') || e.message.includes('Invalid Spreadsheet')) {
+            throw e;
+          }
+          resText = await clone.text();
+          if (!res.ok) {
+            throw new Error(`Connection Error (${res.status}): Failed to reach financial source.`);
+          }
+        }
+      } else {
+        // Direct fetch handling (CORS restricted)
         if (!res.ok) {
-          let msg = data?.details || data?.error || `HTTP ${res.status}`;
-          if (res.status === 400) msg = "Invalid Spreadsheet URL. Please ensure you provided a valid Google Sheets link.";
-          if (res.status === 401) msg = "Access Denied. Ensure your Sheet's Sharing settings is 'Anyone with the link' as Viewer.";
-          throw new Error(msg);
+          if (res.status === 0 || res.status === 404 || res.status === 403) {
+            throw new Error(`Static Deployment Sync Error: Failed to reach sheet directly. Since you are on a static host (like Netlify), please ensure your Google Sheet is 'Published to the web' as CSV or shared as 'Anyone with the link can view' as Viewer.`);
+          }
+          throw new Error(`Direct Connection Error (${res.status}): Failed to reach financial source.`);
         }
-        resText = typeof data === 'string' ? data : JSON.stringify(data);
-      } catch (e: any) {
-        if (e.message.includes('HTTP') || e.message.includes('Access Denied') || e.message.includes('Invalid Spreadsheet')) {
-          throw e;
-        }
-        resText = await clone.text();
-        if (!res.ok) {
-          throw new Error(`Connection Error (${res.status}): Failed to reach financial source.`);
-        }
+        resText = await res.text();
       }
       
       let parsed = parseTransactionData(resText);
@@ -109,8 +151,8 @@ export default function App() {
         const baseDocId = url.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1];
         if (baseDocId) {
           const fallbackUrl = getGoogleSheetCsvUrl(baseDocId);
-          const fallbackProxy = `/api/proxy?url=${encodeURIComponent(fallbackUrl)}`;
-          const fallbackRes = await window.fetch(`${fallbackProxy}&cb=fallback_${Date.now()}`);
+          const fallbackTarget = isUsingProxy ? `/api/proxy?url=${encodeURIComponent(fallbackUrl)}` : fallbackUrl;
+          const fallbackRes = await window.fetch(`${fallbackTarget}&cb=fallback_${Date.now()}`);
           if (fallbackRes.ok) {
             const fallbackText = await fallbackRes.text();
             parsed = parseTransactionData(fallbackText);
@@ -225,10 +267,27 @@ export default function App() {
   };
 
   const handleExport = () => {
+    const income = filteredData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
+    const expense = filteredData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
+    const saving = filteredData.filter(t => t.type === 'SAVING').reduce((s, t) => s + t.amount, 0);
+
+    const summary = [
+      ['SUMMARY'],
+      ['Total Income', income],
+      ['Total Expense', expense],
+      ['Total Savings', saving],
+      ['Net Balance', income - expense],
+      [],
+    ].map(row => row.join(',')).join('\n');
+
     const cols = ['sr', 'date', 'name', 'amount', 'category', 'type', 'from', 'notes'];
     const header = cols.join(',');
-    const rows = filteredData.map(r => cols.map(c => JSON.stringify((r as any)[c] || '')).join(','));
-    const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv' });
+    const rows = filteredData.map(r => cols.map(c => {
+      const val = (r as any)[c] || '';
+      return typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val;
+    }).join(','));
+    
+    const blob = new Blob([summary + '\n' + header + '\n' + rows.join('\n')], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -285,8 +344,9 @@ export default function App() {
         onUploadClick={() => document.getElementById('file-upload-dialog')?.click()}
         onExportCSV={handleExport}
         onReportClick={() => setIsReportModalOpen(true)}
-        onPrintClick={() => window.print()}
         onRefreshClick={() => syncFinancialData(csvUrl)}
+        isDarkMode={isDarkMode}
+        onThemeToggle={() => setIsDarkMode(!isDarkMode)}
         lastUpdated={lastUpdated}
         status={(error || dataSource === 'file') ? 'offline' : 'online'}
         activeView={currentView}

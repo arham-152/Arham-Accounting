@@ -5,12 +5,12 @@
   --font-display: "Syne", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-bg: #0a0c10;
-  --color-surface: #111318;
-  --color-surface-brighter: #181c24;
-  --color-surface-brightest: #1e2330;
-  --color-border-main: #1f2430;
-  --color-border-hover: #2a3040;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-brighter: var(--surface-brighter);
+  --color-surface-brightest: var(--surface-brightest);
+  --color-border-main: var(--border-main);
+  --color-border-hover: var(--border-hover);
   
   --color-income: #22c55e;
   --color-expense: #ef4444;
@@ -19,16 +19,46 @@
   --color-accent-gold: #f0b429;
   --color-teal-main: #4ecdc4;
 
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
   --radius-dashboard: 14px;
 }
 
 @layer base {
+  :root {
+    --bg: #f4f6fa; /* Indigo-tinted slate for 'more color' in light mode */
+    --surface: #ffffff;
+    --surface-brighter: #e9eff6;
+    --surface-brightest: #dee7f1;
+    --border-main: #d1d9e6;
+    --border-hover: #b8c5d6;
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+  }
+
+  .dark {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface-brighter: #181c24;
+    --surface-brightest: #1e2330;
+    --border-main: #1f2430;
+    --border-hover: #2a3040;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+  }
+
   body {
-    @apply bg-bg text-gray-100 font-sans antialiased selection:bg-accent-gold/30 selection:text-white;
+    @apply bg-bg font-sans antialiased selection:bg-accent-gold selection:text-black;
+    color: var(--text-secondary);
   }
 
   h1, h2, h3, h4, .font-display {
-    @apply font-display tracking-tight text-white mb-0;
+    @apply font-display tracking-tight mb-0;
+    color: var(--text-primary);
   }
 
   .font-mono {
@@ -38,7 +68,7 @@
 
 @layer components {
   .dashboard-card {
-    @apply bg-surface border border-border-main rounded-dashboard p-6 transition-all duration-300 hover:border-border-hover hover:translate-y-[-2px] hover:shadow-2xl hover:shadow-black/50;
+    @apply bg-surface border border-border-main rounded-dashboard p-6 transition-all duration-300 hover:border-border-hover hover:translate-y-[-2px] shadow-sm hover:shadow-indigo-500/10 dark:shadow-none dark:hover:shadow-black/50;
   }
 
   .kpi-border {
