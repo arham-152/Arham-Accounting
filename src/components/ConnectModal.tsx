@@ -91,17 +91,17 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
               </ul>
             </div>
             
-            <div className="flex gap-2 mb-2">
+            <div className="flex flex-col sm:flex-row gap-2 mb-2">
               <input 
                 type="text" 
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://docs.google.com/spreadsheets/d/..."
-                className="flex-1 bg-surface-brighter border border-border-main text-gray-200 text-sm px-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors font-mono"
+                placeholder="Google Sheet URL..."
+                className="flex-1 bg-surface-brighter border border-border-main text-gray-200 text-sm px-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors font-mono min-w-0"
               />
               <button 
                 onClick={handleConnect}
-                className="bg-accent-gold text-black px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-500 transition-all active:scale-95"
+                className="bg-accent-gold text-black w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-500 transition-all active:scale-95 whitespace-nowrap"
               >
                 Connect
               </button>

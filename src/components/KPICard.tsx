@@ -41,7 +41,7 @@ export const KPICard: React.FC<KPICardProps> = ({ label, value, subText, icon, c
         <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{label}</div>
       </div>
       
-      <div className={cn("relative z-10 font-mono text-2xl font-semibold mb-1", colorClass.replace('bg-', 'text-'))}>
+      <div className={cn("relative z-10 font-mono text-xl sm:text-2xl font-semibold mb-1 truncate", colorClass.replace('bg-', 'text-'))}>
         {hideAmount ? (
           <span className="tracking-widest">••••••</span>
         ) : (
@@ -49,8 +49,8 @@ export const KPICard: React.FC<KPICardProps> = ({ label, value, subText, icon, c
         )}
       </div>
       
-      <div className="relative z-10 text-[11px] text-text-muted font-mono mt-auto flex justify-between items-end">
-        <span>{subText}</span>
+      <div className="relative z-10 text-[10px] sm:text-[11px] text-text-muted font-mono mt-auto flex justify-between items-end">
+        <span className="truncate pr-2">{subText}</span>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <motion.div
             animate={{ x: [0, 5, 0] }}

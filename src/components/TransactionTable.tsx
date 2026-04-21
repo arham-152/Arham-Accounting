@@ -52,9 +52,9 @@ const TransactionDetailModal: React.FC<{
           </div>
 
           {/* Details Grid */}
-          <div className="p-6 grid grid-cols-2 gap-4">
-             <div className="p-4 bg-surface-brighter rounded-xl border border-border-main flex items-center gap-3">
-               <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-accent-gold">
+          <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+             <div className="p-3 sm:p-4 bg-surface-brighter rounded-xl border border-border-main flex items-center gap-3">
+               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface flex items-center justify-center text-accent-gold">
                  <Calendar size={18} />
                </div>
                <div className="flex flex-col">
@@ -138,6 +138,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   const [borrowFilter, setBorrowFilter] = useState<'all' | 'owes' | 'gets' | 'clear'>('all');
   const [borrowSort, setBorrowSort] = useState<'name' | 'activity' | 'balance'>('balance');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [activeNoteSr, setActiveNoteSr] = useState<number | null>(null);
 
   const uniqueCategories = useMemo(() => {
     return Array.from(new Set(transactions.map(t => t.category))).sort();
@@ -260,21 +261,21 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   };
 
   return (
-    <div className="flex flex-col gap-6 mb-12">
+    <div className="flex flex-col gap-6 mb-12" onClick={() => setActiveNoteSr(null)}>
       <TransactionDetailModal 
         transaction={selectedTransaction} 
         onClose={() => setSelectedTransaction(null)} 
       />
 
-      <div className="dashboard-card p-0 overflow-hidden flex flex-col">
-        <div className="p-5 border-b border-border-main flex justify-between items-center bg-surface/50">
-          <div className="flex items-center gap-3">
-            <h3 className="text-sm font-bold m-0 text-text-primary">Transaction Register</h3>
-            <span className="font-mono text-[10px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main">
+      <div className="dashboard-card p-0 overflow-hidden flex flex-col mb-4">
+        <div className="p-4 sm:p-5 border-b border-border-main flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 bg-surface/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <h3 className="text-xs font-bold m-0 text-text-primary whitespace-nowrap">Transaction Register</h3>
+            <span className="font-mono text-[9px] sm:text-[10px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main shrink-0">
               {filteredTransactions.length} of {transactions.length} entries
             </span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
             <div className="flex items-center gap-2 group cursor-pointer">
               <input 
                 type="checkbox" 
@@ -283,17 +284,17 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 onChange={(e) => setShowSummary(e.target.checked)}
                 className="w-4 h-4 rounded border-border-main bg-surface-brighter text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
               />
-              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-text-muted group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest">
+              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-text-muted group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest whitespace-nowrap">
                 Summary
               </label>
             </div>
 
-            <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-lg border border-border-main">
-              <span className="text-[9px] font-black text-text-muted uppercase tracking-widest">Ledger Mode:</span>
+            <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-lg border border-border-main w-full sm:w-auto">
+              <span className="text-[8px] sm:text-[9px] font-black text-text-muted uppercase tracking-widest shrink-0">Mode:</span>
               <select 
                 value={ledgerModeCategory || ''} 
                 onChange={(e) => setLedgerModeCategory(e.target.value || null)}
-                className="bg-transparent text-[10px] font-bold text-accent-gold outline-none cursor-pointer min-w-[120px]"
+                className="bg-transparent text-[10px] font-bold text-accent-gold outline-none cursor-pointer flex-1 sm:min-w-[120px]"
               >
                 <option value="">Master Ledger</option>
                 {uniqueCategories.map(cat => (
@@ -301,14 +302,14 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 ))}
               </select>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-64">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input 
                 type="text" 
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
-                placeholder="Search register..."
-                className="bg-surface-brighter border border-border-main text-text-primary text-xs pl-9 pr-3 py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors w-64"
+                placeholder="Search..."
+                className="bg-surface-brighter border border-border-main text-text-primary text-xs pl-9 pr-3 py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors w-full"
               />
             </div>
           </div>
@@ -318,26 +319,26 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-10 bg-surface-brightest shadow-sm">
               <tr>
-                <th onClick={() => requestSort('sr')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('sr')} className="hidden sm:table-cell p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1"># {getSortIcon('sr')}</div>
                 </th>
                 <th onClick={() => requestSort('date')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Date {getSortIcon('date')}</div>
                 </th>
-                <th onClick={() => requestSort('name')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('name')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-primary sm:text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Reference {getSortIcon('name')}</div>
                 </th>
-                <th onClick={() => requestSort('amount')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
-                  <div className="flex items-center gap-1">Amount {getSortIcon('amount')}</div>
+                <th onClick={() => requestSort('amount')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap text-right sm:text-left">
+                  <div className="flex items-center sm:justify-start justify-end gap-1">Amount {getSortIcon('amount')}</div>
                 </th>
-                <th onClick={() => requestSort('category')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('category')} className="hidden lg:table-cell p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Category {getSortIcon('category')}</div>
                 </th>
-                <th onClick={() => requestSort('type')} className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
+                <th onClick={() => requestSort('type')} className="hidden sm:table-cell p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted cursor-pointer hover:text-text-primary transition-colors whitespace-nowrap">
                   <div className="flex items-center gap-1">Type {getSortIcon('type')}</div>
                 </th>
-                <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted whitespace-nowrap">From</th>
-                <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted whitespace-nowrap">To</th>
+                <th className="hidden xl:table-cell p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted whitespace-nowrap">From</th>
+                <th className="hidden xl:table-cell p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted whitespace-nowrap">To</th>
                 <th className="p-3 font-bold text-[9px] uppercase tracking-wider text-text-muted whitespace-nowrap">Notes</th>
               </tr>
             </thead>
@@ -354,15 +355,15 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     onClick={() => setSelectedTransaction(r)}
                     className={cn("hover:bg-accent-gold/[0.05] transition-colors cursor-pointer group", idx % 2 === 0 ? "bg-transparent" : "bg-surface-brighter/40")}
                   >
-                    <td className="p-3 font-mono text-[10px] text-text-muted">{r.sr}</td>
-                    <td className="p-3 font-mono text-[10px] whitespace-nowrap text-text-secondary">{r.date || '—'}</td>
-                    <td className="p-3 font-semibold truncate max-w-[180px] text-text-primary" title={r.name}>{r.name || '—'}</td>
-                    <td className={cn("p-3 font-mono font-medium", 
+                    <td className="hidden sm:table-cell p-3 font-mono text-[10px] text-text-muted">{r.sr}</td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] whitespace-nowrap text-text-secondary">{r.date || '—'}</td>
+                    <td className="p-2 sm:p-3 font-semibold truncate max-w-[120px] sm:max-w-[180px] text-text-primary text-[11px] sm:text-[12px]" title={r.name}>{r.name || '—'}</td>
+                    <td className={cn("p-2 sm:p-3 font-mono font-bold text-right sm:text-left text-[11px] sm:text-[12px]", 
                       r.type === 'DEBIT' ? "text-income" : r.type === 'CREDIT' ? "text-expense" : "text-text-muted"
                     )}>
                       {formatPKR(r.amount)}
                     </td>
-                    <td className="p-3">
+                    <td className="hidden lg:table-cell p-3">
                       <span 
                         className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold"
                         style={{ backgroundColor: `${CATEGORY_COLORS[r.category] || '#888'}15`, color: CATEGORY_COLORS[r.category] || '#888' }}
@@ -371,7 +372,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                         {r.category}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="hidden sm:table-cell p-3">
                       <span className={cn(
                         "px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-tighter",
                         r.type === 'CREDIT' ? "bg-expense/10 text-expense" :
@@ -382,9 +383,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                         {r.type}
                       </span>
                     </td>
-                    <td className="p-3 text-[10px] text-text-muted capitalize">{r.from}</td>
-                    <td className="p-3 text-[10px] text-accent-gold/80 font-medium capitalize">{r.to}</td>
-                    <td className="p-3 text-[10px] text-text-primary font-medium whitespace-pre-wrap max-w-[200px]" title={r.notes}>{r.notes || '—'}</td>
+                    <td className="hidden xl:table-cell p-3 text-[10px] text-text-muted capitalize">{r.from}</td>
+                    <td className="hidden xl:table-cell p-3 text-[10px] text-accent-gold/80 font-medium capitalize">{r.to}</td>
+                    <td className="p-2 sm:p-3 text-[10px] text-text-primary font-medium italic whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] sm:max-w-[200px]" title={r.notes}>{r.notes || '—'}</td>
                   </motion.tr>
                 ))}
               </AnimatePresence>
@@ -433,24 +434,26 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
 
       {showSummary && ledgerModeCategory && ledgerSummary.length > 0 && (
         <div className="animate-in fade-in slide-in-from-top-4 duration-500 pt-6 border-t border-border-main/50">
-          <div className="mb-6 px-2 flex justify-between items-end">
+          <div className="mb-6 px-2 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-5">
             <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-display font-extrabold tracking-tight capitalize">{ledgerModeCategory} Ledger Summary</h2>
+              <h2 className="text-lg sm:text-xl font-display font-black tracking-tight capitalize leading-tight">
+                {ledgerModeCategory} Ledger Summary
+              </h2>
               {borrowStats && (
-                <div className="flex items-center gap-4 mt-2">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
                    <div className="flex flex-col">
-                      <span className="text-[9px] uppercase font-bold text-text-muted tracking-widest">Total Owed</span>
-                      <span className="text-sm font-mono font-bold text-expense">{formatPKR(borrowStats.totalOwed)}</span>
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">Total Owed</span>
+                      <span className="text-xs sm:text-sm font-mono font-bold text-expense">{formatPKR(borrowStats.totalOwed)}</span>
                    </div>
-                   <div className="w-px h-6 bg-border-main" />
+                   <div className="hidden sm:block w-px h-6 bg-border-main" />
                    <div className="flex flex-col">
-                      <span className="text-[9px] uppercase font-bold text-text-muted tracking-widest">To be Received</span>
-                      <span className="text-sm font-mono font-bold text-income">{formatPKR(borrowStats.totalGets)}</span>
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">To be Received</span>
+                      <span className="text-xs sm:text-sm font-mono font-bold text-income">{formatPKR(borrowStats.totalGets)}</span>
                    </div>
-                   <div className="w-px h-6 bg-border-main" />
+                   <div className="hidden sm:block w-px h-6 bg-border-main" />
                    <div className="flex flex-col">
-                      <span className="text-[9px] uppercase font-bold text-text-muted tracking-widest">Net Position</span>
-                      <span className={cn("text-sm font-mono font-bold", borrowStats.net >= 0 ? "text-income" : "text-expense")}>
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">Net Position</span>
+                      <span className={cn("text-xs sm:text-sm font-mono font-bold", borrowStats.net >= 0 ? "text-income" : "text-expense")}>
                         {formatPKR(Math.abs(borrowStats.net))} {borrowStats.net >= 0 ? 'Surplus' : 'Deficit'}
                       </span>
                    </div>
@@ -458,9 +461,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
               )}
             </div>
             
-            <div className="flex items-center gap-3 bg-surface-brighter p-1.5 rounded-xl border border-border-main">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-surface-brighter p-2 rounded-xl border border-border-main">
                <div className="flex items-center gap-1">
-                  <span className="text-[9px] font-bold text-text-muted uppercase ml-2 mr-1">Sort:</span>
+                  <span className="text-[9px] font-bold text-text-muted uppercase ml-1 mr-1">Sort:</span>
                   <select 
                     value={borrowSort} 
                     onChange={(e) => setBorrowSort(e.target.value as any)}
@@ -472,10 +475,10 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                   </select>
                </div>
                {ledgerModeCategory === 'BORROW' && (
-                  <>
+                  <div className="flex items-center gap-2">
                     <div className="w-px h-4 bg-border-main" />
                     <div className="flex items-center gap-1">
-                        <span className="text-[9px] font-bold text-text-muted uppercase ml-1 mr-1">Filter:</span>
+                        <span className="text-[9px] font-bold text-text-muted uppercase ml-1 mr-1">View:</span>
                         <div className="flex gap-1 pr-1">
                           {['all', 'owes', 'gets', 'clear'].map(f => (
                             <button 
@@ -491,7 +494,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                           ))}
                         </div>
                     </div>
-                  </>
+                  </div>
                )}
             </div>
           </div>
@@ -502,17 +505,39 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 <div className="flex justify-between items-center h-full">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                       <div className="relative group/sr">
-                          <span className="text-[10px] text-text-muted transition-colors">({item.recentSr}#)</span>
-                          {/* Hover Pop-up for Notes */}
-                          <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-surface-brightest border border-border-main rounded-lg shadow-2xl opacity-0 invisible group-hover/sr:opacity-100 group-hover/sr:visible transition-all z-20 pointer-events-none">
-                             <div className="text-[8px] uppercase font-bold text-accent-gold mb-1 tracking-widest">Recent Notes</div>
-                             <p className="text-[10px] text-text-primary italic line-clamp-4 leading-relaxed">
-                               {item.recentNotes}
+                       <div 
+                         className="relative group/sr"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           setActiveNoteSr(activeNoteSr === item.recentSr ? null : item.recentSr);
+                         }}
+                       >
+                          <span className={cn(
+                            "text-[10px] text-text-muted transition-colors cursor-help border-b border-dotted border-text-muted/30",
+                            activeNoteSr === item.recentSr ? "text-accent-gold border-accent-gold" : ""
+                          )}>
+                            ({item.recentSr}#)
+                          </span>
+                          {/* Hover/Touch Pop-up for Notes */}
+                          <div className={cn(
+                            "absolute bottom-full left-0 mb-2 w-56 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl transition-all z-20 pointer-events-none",
+                            (activeNoteSr === item.recentSr) 
+                              ? "opacity-100 visible translate-y-0" 
+                              : "opacity-0 invisible translate-y-1 sm:group-hover/sr:opacity-100 sm:group-hover/sr:visible sm:group-hover/sr:translate-y-0"
+                          )}>
+                             <div className="flex items-center justify-between mb-2">
+                               <span className="text-[8px] uppercase font-bold text-accent-gold tracking-[2px]">Last Transaction Notes</span>
+                               <span className="text-[8px] font-mono text-text-muted">SR: {item.recentSr}</span>
+                             </div>
+                             <p className="text-[11px] text-text-primary italic leading-relaxed">
+                               {item.recentNotes || "No notes available for this entry."}
                              </p>
+                             <div className="mt-2 pt-2 border-t border-border-main/50 flex justify-end">
+                                <span className="text-[8px] text-text-muted uppercase">Tap to close</span>
+                             </div>
                           </div>
                        </div>
-                       <span className="font-bold text-sm tracking-tight group-hover:text-accent-gold transition-colors">{item.name}</span>
+                       <span className="font-bold text-sm tracking-tight group-hover:text-accent-gold transition-colors truncate max-w-[120px] sm:max-w-none">{item.name}</span>
                     </div>
                     <span className="text-[10px] text-text-muted font-mono">
                       {ledgerModeCategory === 'BORROW' ? 'Activity' : 'Volume'}: <span className="text-text-secondary">₨ {item.totalActivity.toLocaleString()}</span>
