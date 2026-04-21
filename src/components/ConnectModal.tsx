@@ -55,7 +55,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-surface border border-border-hover w-full max-w-lg rounded-2xl p-8 relative shadow-2xl z-10"
+            className="bg-surface border border-border-hover w-full max-w-lg rounded-2xl p-6 sm:p-8 relative shadow-2xl z-10"
           >
             <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
               <X size={20} />

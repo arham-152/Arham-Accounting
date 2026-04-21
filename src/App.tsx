@@ -16,8 +16,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CircleDollarSign, Receipt, Scale, Handshake, Landmark, AlertCircle, FileText, BrainCircuit, Eye, EyeOff, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from './lib/utils';
 
-const DEFAULT_SHEET_ID = '19VuSm-MmjdcYQShzBZQZAbWkvDkpVYG5k1Koa9A0jNs';
-
 const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
   <div className={cn("animate-pulse bg-surface-brighter rounded-xl border border-border-main", className)} />
 );
@@ -32,14 +30,15 @@ export default function App() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [chartTab, setChartTab] = useState<'overview' | 'category' | 'month'>('overview');
   const [currentView, setCurrentView] = useState<'dashboard' | 'register'>('dashboard');
-  const [csvUrl, setCsvUrl] = useState(getGoogleSheetCsvUrl(DEFAULT_SHEET_ID, '0', 'A1:I', 'Sheet1'));
-  const [dataSource, setDataSource] = useState<'live' | 'file'>('live');
+  const [csvUrl, setCsvUrl] = useState(() => localStorage.getItem('account2026_csv_url') || '');
+  const [dataSource, setDataSource] = useState<'live' | 'file'>(() => localStorage.getItem('account2026_csv_url') ? 'live' : 'file');
   const [aiLoading, setAiLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('account2026_theme');
     return saved ? saved === 'dark' : true; // Default to dark
   });
   const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('account2026_privacy') === 'true');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
@@ -78,7 +77,26 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    // Save CSV URL when it changes
+    if (csvUrl) {
+      localStorage.setItem('account2026_csv_url', csvUrl);
+    }
+  }, [csvUrl]);
+
+  useEffect(() => {
+    // If no data source and no URL, force connect modal for first time users
+    if (!csvUrl && dataSource === 'live') {
+      setIsModalOpen(true);
+      setLoading(false);
+    }
+  }, [csvUrl, dataSource]);
+
   const syncFinancialData = async (url: string) => {
+    if (!url) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -239,17 +257,18 @@ export default function App() {
 
   const handleConnect = (url: string) => {
     console.log(`[Connect] User provided URL: ${url}`);
+    let finalUrl = url;
     if (url.includes('docs.google.com')) {
       const { id, gid } = extractSheetInfo(url);
       if (id) {
-        setCsvUrl(getGoogleSheetCsvUrl(id, gid || '0', 'A1:I', 'Sheet1'));
+        finalUrl = getGoogleSheetCsvUrl(id, gid || '0', 'A1:I', 'Sheet1');
         console.log(`[Connect] Built Google Sheet CSV URL for ID: ${id}`);
-      } else {
-        setCsvUrl(url); // Try direct link if id extraction fails
       }
-    } else {
-      setCsvUrl(url);
     }
+    
+    setCsvUrl(finalUrl);
+    localStorage.setItem('account2026_csv_url', finalUrl);
+    setDataSource('live');
     setIsModalOpen(false);
   };
 
@@ -339,19 +358,41 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-bg selection:bg-accent-gold/20 selection:text-accent-gold">
-      <Navbar 
-        onConnectClick={() => setIsModalOpen(true)}
-        onUploadClick={() => document.getElementById('file-upload-dialog')?.click()}
-        onExportCSV={handleExport}
-        onReportClick={() => setIsReportModalOpen(true)}
-        onRefreshClick={() => syncFinancialData(csvUrl)}
-        isDarkMode={isDarkMode}
-        onThemeToggle={() => setIsDarkMode(!isDarkMode)}
-        lastUpdated={lastUpdated}
-        status={(error || dataSource === 'file') ? 'offline' : 'online'}
-        activeView={currentView}
-        onViewChange={setCurrentView}
-      />
+      <header className="sticky top-0 z-50">
+        <Navbar 
+          onConnectClick={() => setIsModalOpen(true)}
+          onUploadClick={() => document.getElementById('file-upload-dialog')?.click()}
+          onExportCSV={handleExport}
+          onReportClick={() => setIsReportModalOpen(true)}
+          onRefreshClick={() => syncFinancialData(csvUrl)}
+          isDarkMode={isDarkMode}
+          onThemeToggle={() => setIsDarkMode(!isDarkMode)}
+          lastUpdated={lastUpdated}
+          status={(error || dataSource === 'file') ? 'offline' : 'online'}
+          activeView={currentView}
+          onViewChange={setCurrentView}
+          onToggleFilters={() => setShowMobileFilters(!showMobileFilters)}
+          showFilters={showMobileFilters}
+        />
+
+        <AnimatePresence>
+          {(showMobileFilters || window.innerWidth >= 640) && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden sm:!h-auto sm:!opacity-100"
+            >
+              <FiltersBar 
+                filters={filters}
+                categories={categories}
+                setFilters={setFilters}
+                resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '' })}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
 
       <input 
         type="file" 
@@ -359,13 +400,6 @@ export default function App() {
         className="hidden" 
         accept=".csv"
         onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-      />
-
-      <FiltersBar 
-        filters={filters}
-        categories={categories}
-        setFilters={setFilters}
-        resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '' })}
       />
 
       {error && (

@@ -32,10 +32,10 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({ filters, categories, set
   };
 
   return (
-    <div className="sticky top-[52px] z-40 bg-bg/95 backdrop-blur-md border-b border-border-main p-3 px-6 flex flex-wrap gap-4 items-end">
-      <div className="flex flex-col gap-1.5 min-w-[300px]">
+    <div className="sticky top-0 sm:top-[64px] lg:top-[64px] z-40 bg-bg/95 backdrop-blur-md border-b border-border-main p-3 px-4 sm:px-6 flex flex-wrap gap-3 sm:gap-4 items-end">
+      <div className="flex flex-col gap-1.5 w-full lg:w-auto xl:min-w-[300px]">
         <label className="text-[9px] font-bold text-text-muted tracking-widest uppercase">Select Months</label>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-row sm:flex-wrap gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {MONTH_NAMES.map(m => {
             const isActive = filters.months.includes(m);
             return (

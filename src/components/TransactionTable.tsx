@@ -394,24 +394,24 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         
         {/* Register Summary Footer */}
         <div className="p-4 bg-surface border-t border-border-main flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex flex-col">
               <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Total Income</span>
               <span className="text-sm font-mono font-bold text-income">{formatPKR(registerSummary.income)}</span>
             </div>
-            <div className="w-px h-8 bg-border-main" />
+            <div className="hidden sm:block w-px h-8 bg-border-main" />
             <div className="flex flex-col">
               <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Total Expense</span>
               <span className="text-sm font-mono font-bold text-expense">{formatPKR(registerSummary.expense)}</span>
             </div>
-            <div className="w-px h-8 bg-border-main" />
+            <div className="hidden sm:block w-px h-8 bg-border-main" />
             <div className="flex flex-col">
               <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Savings</span>
               <span className="text-sm font-mono font-bold text-saving">{formatPKR(registerSummary.saving)}</span>
             </div>
           </div>
           
-          <div className="px-6 py-3 bg-surface-brighter rounded-xl border border-border-main flex items-center gap-4">
+          <div className="w-full sm:w-auto px-4 sm:px-6 py-3 bg-surface-brighter rounded-xl border border-border-main flex items-center justify-between sm:justify-start gap-4">
             <div className="flex flex-col items-end">
               <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Net Filtered Balance</span>
               <span className={cn(
