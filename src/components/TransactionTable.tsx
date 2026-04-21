@@ -284,21 +284,21 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 onChange={(e) => setShowSummary(e.target.checked)}
                 className="w-4 h-4 rounded border-border-main bg-surface-brighter text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
               />
-              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-text-muted group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest whitespace-nowrap">
+              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-text-secondary group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest whitespace-nowrap">
                 Summary
               </label>
             </div>
 
             <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-lg border border-border-main w-full sm:w-auto">
-              <span className="text-[8px] sm:text-[9px] font-black text-text-muted uppercase tracking-widest shrink-0">Mode:</span>
+              <span className="text-[8px] sm:text-[9px] font-black text-text-secondary uppercase tracking-widest shrink-0 opacity-80">Mode:</span>
               <select 
                 value={ledgerModeCategory || ''} 
                 onChange={(e) => setLedgerModeCategory(e.target.value || null)}
                 className="bg-transparent text-[10px] font-bold text-accent-gold outline-none cursor-pointer flex-1 sm:min-w-[120px]"
               >
-                <option value="">Master Ledger</option>
+                <option value="" className="bg-surface text-text-primary">Master Ledger</option>
                 {uniqueCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat} className="bg-surface text-text-primary">{cat}</option>
                 ))}
               </select>
             </div>
@@ -469,9 +469,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     onChange={(e) => setBorrowSort(e.target.value as any)}
                     className="bg-transparent text-[10px] font-bold text-accent-gold border-none outline-none cursor-pointer"
                   >
-                    <option value="balance">{ledgerModeCategory === 'BORROW' ? 'By Balance' : 'By Intensity'}</option>
-                    <option value="activity">By Activity</option>
-                    <option value="name">By Name</option>
+                    <option value="balance" className="bg-surface text-text-primary">{ledgerModeCategory === 'BORROW' ? 'By Balance' : 'By Intensity'}</option>
+                    <option value="activity" className="bg-surface text-text-primary">By Activity</option>
+                    <option value="name" className="bg-surface text-text-primary">By Name</option>
                   </select>
                </div>
                {ledgerModeCategory === 'BORROW' && (

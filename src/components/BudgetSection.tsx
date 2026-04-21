@@ -4,12 +4,57 @@ import { formatPKR, cn } from '../lib/utils';
 
 interface BudgetSectionProps {
   transactions: Transaction[];
+  allTransactions: Transaction[];
   budgets: Record<string, number>;
   onUpdateBudget: (category: string, amount: number) => void;
 }
 
-export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, budgets, onUpdateBudget }) => {
+export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allTransactions, budgets, onUpdateBudget }) => {
   const expenseCategories = ['ENJOYMENT', 'FOOD', 'HOUSE HOLD', 'BILL', 'GROCERY', 'OUT-FITS', 'MISLINIUS'];
+
+  // Calculate 3-month average for each category based on the 3 full months PRECEDING the current month
+  // We use allTransactions to look back properly even if global filters are applied
+  const averages = React.useMemo(() => {
+    if (allTransactions.length === 0) return {};
+
+    // Use the latest transaction date as anchor
+    const sortedTxns = [...allTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const latestDateStr = sortedTxns.length > 0 ? sortedTxns[0].date : new Date().toISOString();
+    const latestDate = new Date(latestDateStr);
+    
+    // Set anchor to first day of the CURRENT month (e.g., April 1st)
+    // This ensures we look back at the 3 COMPLETED months (Jan, Feb, Mar)
+    const anchorDate = new Date(latestDate.getFullYear(), latestDate.getMonth(), 1);
+    
+    // Look back exactly 3 months from the start of the current month
+    const threeMonthsAgo = new Date(anchorDate);
+    threeMonthsAgo.setMonth(anchorDate.getMonth() - 3);
+
+    const result: Record<string, number> = {};
+    
+    expenseCategories.forEach(cat => {
+      const catTxns = allTransactions.filter(t => 
+        t.category === cat && 
+        t.type === 'CREDIT' && 
+        new Date(t.date) >= threeMonthsAgo && 
+        new Date(t.date) < anchorDate
+      );
+
+      // Group by month to get totals for each of the 3 specified months
+      const monthlyTotals: Record<string, number> = {};
+      catTxns.forEach(t => {
+        const monthKey = t.date.substring(0, 7); // YYYY-MM
+        monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + t.amount;
+      });
+
+      // User wants (Month1 + Month2 + Month3) / 3
+      // We sum all spending in that 90-day window and divide by 3
+      const totalInWindow = catTxns.reduce((sum, t) => sum + t.amount, 0);
+      result[cat] = totalInWindow / 3;
+    });
+
+    return result;
+  }, [transactions]);
 
   const categorySpending = expenseCategories.map(cat => {
     const spent = transactions
@@ -28,7 +73,7 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, budg
         <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-sm font-bold mb-0.5">Category-Wise Budgeting</h3>
-            <p className="text-[11px] text-gray-500">Track your spending against monthly targets</p>
+            <p className="text-[11px] text-text-muted">Track your spending against monthly targets</p>
           </div>
         </div>
 
@@ -37,8 +82,8 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, budg
             <div key={cat} className="space-y-2">
               <div className="flex justify-between items-end">
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-gray-200">{cat}</span>
-                  <span className="text-[10px] text-gray-500">
+                  <span className="text-xs font-bold text-text-primary">{cat}</span>
+                  <span className="text-[10px] text-text-muted">
                     Spent {formatPKR(spent)} of {limit > 0 ? formatPKR(limit) : 'No Budget'}
                   </span>
                 </div>
@@ -52,7 +97,7 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, budg
                   {limit > 0 && (
                     <div className={cn(
                       "text-[9px] font-mono",
-                      remaining < 0 ? "text-expense" : "text-gray-500"
+                      remaining < 0 ? "text-expense" : "text-text-muted"
                     )}>
                       {remaining < 0 ? `Over by ${formatPKR(Math.abs(remaining))}` : `${formatPKR(remaining)} left`}
                     </div>
@@ -76,21 +121,31 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, budg
 
       <div className="dashboard-card">
         <h3 className="text-sm font-bold mb-0.5">Manage Targets</h3>
-        <p className="text-[11px] text-gray-500 mb-6">Set monthly limits for each category</p>
+        <p className="text-[11px] text-text-muted mb-6">Set monthly limits for each category</p>
         
-        <div className="space-y-4">
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4 pb-2 border-b border-border-main">
+            <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Manual Setup</span>
+            <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">3-Month Avg</span>
+          </div>
+
           {expenseCategories.map(cat => (
             <div key={cat} className="space-y-1.5">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{cat}</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[11px] font-mono">₨</span>
-                <input 
-                  type="number" 
-                  value={budgets[cat] || ''}
-                  onChange={(e) => onUpdateBudget(cat, parseFloat(e.target.value) || 0)}
-                  placeholder="Set limit..."
-                  className="w-full bg-surface-brighter border border-border-main text-gray-200 text-xs pl-8 pr-3 py-2 rounded-xl outline-none focus:border-accent-gold transition-colors font-mono"
-                />
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{cat}</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[11px] font-mono">₨</span>
+                  <input 
+                    type="number" 
+                    value={budgets[cat] || ''}
+                    onChange={(e) => onUpdateBudget(cat, parseFloat(e.target.value) || 0)}
+                    placeholder="Set limit..."
+                    className="w-full bg-surface-brighter border border-border-main text-text-primary text-xs pl-8 pr-3 py-2 rounded-xl outline-none focus:border-accent-gold transition-colors font-mono"
+                  />
+                </div>
+                <div className="bg-surface-brighter border border-border-main rounded-xl px-3 py-2 flex items-center">
+                  <span className="text-xs font-bold text-accent-gold font-mono truncate">{formatPKR(averages[cat])}</span>
+                </div>
               </div>
             </div>
           ))}

@@ -57,36 +57,36 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="bg-surface border border-border-hover w-full max-w-lg rounded-2xl p-6 sm:p-8 relative shadow-2xl z-10"
           >
-            <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+            <button onClick={onClose} className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors">
               <X size={20} />
             </button>
             
             <div className="flex items-center gap-3 mb-2">
               <LinkIcon className="text-accent-gold" size={24} />
-              <h2 className="text-xl font-bold font-display">Connect Financial Data</h2>
+              <h2 className="text-xl font-bold font-display text-text-primary">Connect Financial Data</h2>
             </div>
             
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+            <p className="text-text-secondary text-sm mb-6 leading-relaxed">
               Link your live Google Spreadsheet or upload a CSV file to monitor your financials in real-time.
             </p>
             
             <div className="bg-surface-brighter rounded-xl p-4 mb-6 border border-border-main">
-              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Setup Instructions</div>
-              <ul className="text-xs text-gray-400 space-y-2.5">
+              <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Setup Instructions</div>
+              <ul className="text-xs text-text-secondary space-y-2.5">
                 <li className="flex items-start gap-2">
                   <div className="w-4 h-4 rounded-full bg-accent-gold/20 text-accent-gold flex items-center justify-center text-[9px] font-bold mt-0.5 shrink-0">1</div>
-                  <span>Open your sheet and click <strong className="text-gray-200">Share</strong></span>
+                  <span>Open your sheet and click <strong className="text-text-primary font-bold">Share</strong></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-4 h-4 rounded-full bg-accent-gold/20 text-accent-gold flex items-center justify-center text-[9px] font-bold mt-0.5 shrink-0">2</div>
                   <div>
-                    <span>Set <b>General access</b> to "Anyone with the link" as Viewer</span>
-                    <p className="text-[10px] text-gray-500 mt-1 italic">Note: If hosted on Netlify, use <b>File → Share → Publish to web</b> for best results.</p>
+                    <span className="font-medium">Set <b>General access</b> to "Anyone with the link" as Viewer</span>
+                    <p className="text-[10px] text-text-muted mt-1 italic">Note: If hosted on Netlify, use <b>File → Share → Publish to web</b> for best results.</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-4 h-4 rounded-full bg-accent-gold/20 text-accent-gold flex items-center justify-center text-[9px] font-bold mt-0.5 shrink-0">3</div>
-                  <span>Click <strong className="text-gray-200">Copy link</strong> and paste it below</span>
+                  <span>Click <strong className="text-text-primary font-bold">Copy link</strong> and paste it below</span>
                 </li>
               </ul>
             </div>
@@ -97,7 +97,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Google Sheet URL..."
-                className="flex-1 bg-surface-brighter border border-border-main text-gray-200 text-sm px-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors font-mono min-w-0"
+                className="flex-1 bg-surface-brighter border border-border-main text-text-primary text-sm px-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors font-mono min-w-0 placeholder:text-text-muted/50"
               />
               <button 
                 onClick={handleConnect}
@@ -114,13 +114,13 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
               </div>
             )}
             
-            <div className="text-[10px] text-gray-500 font-mono mb-6">
+            <div className="text-[10px] text-text-muted font-mono mb-6 italic">
               Your data stays local in the session and is not sent to any external server.
             </div>
             
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-border-main" />
-              <span className="text-[10px] font-bold text-gray-600 uppercase">OR</span>
+              <span className="text-[10px] font-bold text-text-muted uppercase">OR</span>
               <div className="flex-1 h-px bg-border-main" />
             </div>
             

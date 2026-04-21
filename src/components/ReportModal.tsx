@@ -63,42 +63,42 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onGen
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="bg-surface border border-border-hover w-full max-w-md rounded-2xl p-6 sm:p-8 relative shadow-2xl z-10"
           >
-            <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+            <button onClick={onClose} className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors">
               <X size={20} />
             </button>
             
             <div className="flex items-center gap-3 mb-2">
               <FileText className="text-accent-gold" size={24} />
-              <h2 className="text-xl font-bold font-display">Generate Report</h2>
+              <h2 className="text-xl font-bold font-display text-text-primary">Generate Report</h2>
             </div>
             
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+            <p className="text-text-secondary text-sm mb-6 leading-relaxed">
               Select a custom date range to export your financial data.
             </p>
             
             <div className="space-y-4 mb-6">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Start Date</label>
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Start Date</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
                   <input 
                     type="date" 
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-surface-brighter border border-border-main text-gray-200 text-sm pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors"
+                    className="w-full bg-surface-brighter border border-border-main text-text-primary text-sm pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors"
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">End Date</label>
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">End Date</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
                   <input 
                     type="date" 
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-surface-brighter border border-border-main text-gray-200 text-sm pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors"
+                    className="w-full bg-surface-brighter border border-border-main text-text-primary text-sm pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors"
                   />
                 </div>
               </div>
@@ -121,14 +121,14 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onGen
               </button>
               <button 
                 onClick={() => handleGenerate('EXCEL')}
-                className="flex items-center justify-center gap-2 border border-border-main bg-surface-brighter text-gray-300 py-3 rounded-xl font-bold text-sm hover:border-accent-gold hover:text-white transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 border border-border-main bg-surface-brighter text-text-secondary py-3 rounded-xl font-bold text-sm hover:border-accent-gold hover:text-text-primary transition-all active:scale-95"
               >
                 <Download size={16} />
                 <span>Excel Export</span>
               </button>
             </div>
             
-            <div className="mt-6 text-[10px] text-gray-500 font-mono text-center">
+            <div className="mt-6 text-[10px] text-text-muted font-mono text-center italic">
               Processing data locally for maximum security.
             </div>
           </motion.div>

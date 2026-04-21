@@ -8,6 +8,9 @@ import { Charts } from './components/Charts';
 import { AnalysisPanels } from './components/AnalysisPanels';
 import { BudgetSection } from './components/BudgetSection';
 import { TransactionTable } from './components/TransactionTable';
+import { WealthTracker, Asset } from './components/WealthTracker';
+import { SavingsGoals, SavingsGoal } from './components/SavingsGoals';
+import { RecurringBills } from './components/RecurringBills';
 import { ConnectModal } from './components/ConnectModal';
 import { ReportModal } from './components/ReportModal';
 import { generatePDFReport, generateExcelReport } from './services/reportService';
@@ -67,9 +70,27 @@ export default function App() {
     return saved ? JSON.parse(saved) : {};
   });
 
+  const [wealthAssets, setWealthAssets] = useState<Asset[]>(() => {
+    const saved = localStorage.getItem('account2026_wealth');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(() => {
+    const saved = localStorage.getItem('account2026_goals');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem('account2026_budgets', JSON.stringify(budgets));
   }, [budgets]);
+
+  useEffect(() => {
+    localStorage.setItem('account2026_wealth', JSON.stringify(wealthAssets));
+  }, [wealthAssets]);
+
+  useEffect(() => {
+    localStorage.setItem('account2026_goals', JSON.stringify(savingsGoals));
+  }, [savingsGoals]);
 
   useEffect(() => {
     // Initial delay for entrance animation
@@ -357,7 +378,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-bg selection:bg-accent-gold/20 selection:text-accent-gold">
+    <div className="flex flex-col min-h-screen bg-bg selection:bg-accent-gold/20 selection:text-accent-gold overflow-x-hidden">
       <header className="sticky top-0 z-50">
         <Navbar 
           onConnectClick={() => setIsModalOpen(true)}
@@ -411,19 +432,19 @@ export default function App() {
       )}
 
       <main className={cn(
-        "max-w-[1600px] mx-auto p-6 transition-all duration-500",
-        currentView === 'register' ? "flex flex-col gap-2 pt-2 px-4 lg:px-8" : "flex flex-col gap-10"
+        "flex-1 max-w-[1600px] mx-auto w-full p-6 transition-all duration-500 pb-32",
+        currentView === 'register' ? "flex flex-col gap-2 pt-2 px-4 lg:px-8" : "flex flex-col gap-8"
       )}>
         {currentView === 'dashboard' && (
-          <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* KPI Grid */}
             <section>
               <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[3px]">Key Performance Indicators</h2>
+                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Key Performance Indicators</h2>
                 <div className="flex-1 h-px bg-border-main" />
                 <button 
                   onClick={() => setHideAmounts(!hideAmounts)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-surface-brighter border border-border-main rounded-xl text-gray-400 hover:text-white transition-all hover:bg-surface-brightest active:scale-95 group"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-surface-brighter border border-border-main rounded-xl text-text-muted hover:text-text-primary transition-all hover:bg-surface-brightest active:scale-95 group"
                   title={hideAmounts ? "Show Amounts" : "Hide Amounts"}
                 >
                   {hideAmounts ? <Eye size={12} className="text-accent-gold" /> : <EyeOff size={12} />}
@@ -500,7 +521,7 @@ export default function App() {
             <section>
               <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-3 mb-6">
                 <div className="flex items-center gap-3 shrink-0">
-                  <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[3px]">Trend Analytics</h2>
+                  <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Trend Analytics</h2>
                   <div className="flex-1 lg:hidden h-px bg-border-main" />
                 </div>
                 
@@ -509,19 +530,19 @@ export default function App() {
                 <div className="flex items-center gap-1 bg-surface-brighter p-1 rounded-xl border border-border-main overflow-x-auto scrollbar-none">
                   <button 
                     onClick={() => setChartTab('overview')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'overview' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'overview' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
                   >
                     Overview
                   </button>
                   <button 
                     onClick={() => setChartTab('category')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'category' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'category' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
                   >
                     Category Analysis
                   </button>
                   <button 
                     onClick={() => setChartTab('month')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'month' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'month' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
                   >
                     Monthly Breakdown
                   </button>
@@ -529,19 +550,19 @@ export default function App() {
 
                 <button 
                   onClick={() => setIsReportModalOpen(true)}
-                  className="hidden sm:flex items-center gap-2 text-[10px] font-bold bg-white/5 border border-border-main px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all active:scale-95 whitespace-nowrap"
+                  className="hidden sm:flex items-center gap-2 text-[10px] font-bold bg-white/5 border border-border-main px-3 py-1.5 rounded-lg text-text-muted hover:text-text-primary transition-all active:scale-95 whitespace-nowrap"
                 >
                   <FileText size={14} className="text-accent-gold" />
                   <span>Custom Report</span>
                 </button>
               </div>
-              <Charts transactions={filteredData} budgets={budgets} activeTab={chartTab} />
+              <Charts transactions={filteredData} allTransactions={allData} budgets={budgets} activeTab={chartTab} isDarkMode={isDarkMode} />
             </section>
 
             {/* Budget Section */}
             <section>
               <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[3px]">Budget Tracking</h2>
+                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Budget Tracking</h2>
                 <div className="flex-1 h-px bg-border-main" />
               </div>
               <BudgetSection 
@@ -550,6 +571,7 @@ export default function App() {
                   const currentMonth = MONTH_NAMES[new Date().getMonth()];
                   return r.month === currentMonth;
                 })} 
+                allTransactions={allData}
                 budgets={budgets}
                 onUpdateBudget={(cat, amt) => setBudgets(prev => ({ ...prev, [cat]: amt }))}
               />
@@ -558,11 +580,43 @@ export default function App() {
             {/* Deep Analysis */}
             <section>
               <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[3px]">Intelligent Insights</h2>
-                <div className="flex-1 h-px bg-border-main" />
+                <Receipt size={24} className="text-accent-gold" />
+                <h2 className="text-xl font-bold text-text-primary">Advanced Intelligence</h2>
               </div>
-              <AnalysisPanels transactions={filteredData} borrowStatus={filters.borrowStatus} />
+              <AnalysisPanels transactions={filteredData} borrowStatus={filters.borrowStatus} budgets={budgets} />
             </section>
+
+            {/* Smart Tools Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
+              <div className="lg:col-span-2 space-y-8">
+                <RecurringBills transactions={allData} />
+              </div>
+              <div className="space-y-8">
+                <SavingsGoals 
+                  goals={savingsGoals}
+                  onAddGoal={g => setSavingsGoals(prev => [...prev, g])}
+                  onRemoveGoal={id => setSavingsGoals(prev => prev.filter(g => g.id !== id))}
+                  onUpdateGoal={(id, amt) => {
+                    setSavingsGoals(prev => prev.map(g => g.id === id ? { ...g, saved: g.saved + amt } : g));
+                  }}
+                  availableBalance={kpis.net - savingsGoals.reduce((s, g) => s + g.saved, 0)}
+                />
+                <WealthTracker 
+                  assets={wealthAssets}
+                  onAddAsset={a => setWealthAssets(prev => [...prev, a])}
+                  onRemoveAsset={id => setWealthAssets(prev => prev.filter(a => a.id !== id))}
+                />
+                <div className="dashboard-card bg-surface-brighter border-dashed border-border-main p-6 flex flex-col items-center justify-center text-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-accent-gold/5 flex items-center justify-center text-accent-gold/40">
+                    <BrainCircuit size={20} />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">Neural Engine Optimization</h4>
+                    <p className="text-[9px] text-text-muted/60 leading-relaxed">System is continuously learning from your spending patterns to improve predictive accuracy.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -571,7 +625,7 @@ export default function App() {
             {/* Transaction Table */}
             <section className="mb-2">
               <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[3px]">Master Ledger</h2>
+                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Master Ledger</h2>
                 <div className="flex-1 h-px bg-border-main" />
               </div>
               <TransactionTable transactions={filteredData} />
@@ -580,13 +634,15 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-border-main p-8 text-center bg-surface/50">
-         <div className="text-[10px] text-gray-500 font-mono tracking-widest uppercase mb-2">
+      <footer className="border-t border-border-main p-8 text-center bg-surface-brighter selection:bg-accent-gold/10 mt-auto">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-[10px] text-text-muted font-mono tracking-widest uppercase mb-2">
             Professional Fiscal Environment &nbsp;·&nbsp; Account 2026 Engine
-         </div>
-         <div className="text-[9px] text-gray-600">
+          </div>
+          <div className="text-[9px] text-text-secondary opacity-70">
             Secure browser-side processing. Built for high-frequency financial monitoring.
-         </div>
+          </div>
+        </div>
       </footer>
 
       <ConnectModal 
@@ -613,7 +669,7 @@ export default function App() {
           >
             <div className="text-2xl font-display font-extrabold tracking-tighter">Account <span className="text-accent-gold">2026</span></div>
             <div className="w-12 h-12 border-4 border-border-main border-t-accent-gold rounded-full animate-spin" />
-            <div className="text-[10px] font-mono text-gray-500 uppercase tracking-[4px]">Initializing Systems...</div>
+            <div className="text-[10px] font-mono text-text-muted uppercase tracking-[4px]">Initializing Systems...</div>
           </motion.div>
         )}
       </AnimatePresence>

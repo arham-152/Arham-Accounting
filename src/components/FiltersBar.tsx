@@ -57,58 +57,58 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({ filters, categories, set
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-[9px] font-bold text-text-muted tracking-widest uppercase">Financial Year</label>
+        <label className="text-[9px] font-bold text-text-secondary tracking-widest uppercase opacity-80">Financial Year</label>
         <select 
           name="year" 
           value={filters.year} 
           onChange={handleChange}
           className="bg-surface-brighter border border-border-main text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg outline-none cursor-pointer hover:border-accent-gold transition-colors appearance-none pr-8 bg-[url('data:image/svg+xml,%3Csvg_xmlns=%22http://www.w3.org/2000/svg%22_width=%228%22_height=%225%22%3E%3Cpath_d=%22M0_0l4_5_4-5z%22_fill=%22%236b7280%22/%3E%3C/svg%3E')] bg-no-repeat bg-[position:right_8px_center]"
         >
-          <option value="">Select Year</option>
-          {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+          <option value="" className="bg-surface text-text-primary">Select Year</option>
+          {YEAR_OPTIONS.map(y => <option key={y} value={y} className="bg-surface text-text-primary">{y}</option>)}
         </select>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-[9px] font-bold text-text-muted tracking-widest uppercase">Category</label>
+        <label className="text-[9px] font-bold text-text-secondary tracking-widest uppercase opacity-80">Category</label>
         <select 
           name="category" 
           value={filters.category} 
           onChange={handleChange}
           className="bg-surface-brighter border border-border-main text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg outline-none cursor-pointer hover:border-accent-gold transition-colors appearance-none pr-8 bg-[url('data:image/svg+xml,%3Csvg_xmlns=%22http://www.w3.org/2000/svg%22_width=%228%22_height=%225%22%3E%3Cpath_d=%22M0_0l4_5_4-5z%22_fill=%22%236b7280%22/%3E%3C/svg%3E')] bg-no-repeat bg-[position:right_8px_center]"
         >
-          <option value="">All Categories</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          <option value="" className="bg-surface text-text-primary">All Categories</option>
+          {categories.map(c => <option key={c} value={c} className="bg-surface text-text-primary">{c}</option>)}
         </select>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-[9px] font-bold text-text-muted tracking-widest uppercase">Type</label>
+        <label className="text-[9px] font-bold text-text-secondary tracking-widest uppercase opacity-80">Type</label>
         <select 
           name="type" 
           value={filters.type} 
           onChange={handleChange}
           className="bg-surface-brighter border border-border-main text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg outline-none cursor-pointer hover:border-accent-gold transition-colors appearance-none pr-8 bg-[url('data:image/svg+xml,%3Csvg_xmlns=%22http://www.w3.org/2000/svg%22_width=%228%22_height=%225%22%3E%3Cpath_d=%22M0_0l4_5_4-5z%22_fill=%22%236b7280%22/%3E%3C/svg%3E')] bg-no-repeat bg-[position:right_8px_center]"
         >
-          <option value="">All Types</option>
-          <option value="CREDIT">CREDIT</option>
-          <option value="DEBIT">DEBIT</option>
-          <option value="TRANSFER">TRANSFER</option>
-          <option value="SAVING">SAVING</option>
+          <option value="" className="bg-surface text-text-primary">All Types</option>
+          <option value="CREDIT" className="bg-surface text-text-primary">CREDIT</option>
+          <option value="DEBIT" className="bg-surface text-text-primary">DEBIT</option>
+          <option value="TRANSFER" className="bg-surface text-text-primary">TRANSFER</option>
+          <option value="SAVING" className="bg-surface text-text-primary">SAVING</option>
         </select>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-[9px] font-bold text-text-muted tracking-widest uppercase">Channel</label>
+        <label className="text-[9px] font-bold text-text-secondary tracking-widest uppercase opacity-80">Channel</label>
         <select 
           name="channel" 
           value={filters.channel} 
           onChange={handleChange}
           className="bg-surface-brighter border border-border-main text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg outline-none cursor-pointer hover:border-accent-gold transition-colors appearance-none pr-8 bg-[url('data:image/svg+xml,%3Csvg_xmlns=%22http://www.w3.org/2000/svg%22_width=%228%22_height=%225%22%3E%3Cpath_d=%22M0_0l4_5_4-5z%22_fill=%22%236b7280%22/%3E%3C/svg%3E')] bg-no-repeat bg-[position:right_8px_center]"
         >
-          <option value="">All</option>
-          <option value="CASH">Cash</option>
-          <option value="Jazz-Cash">JazzCash</option>
+          <option value="" className="bg-surface text-text-primary">All</option>
+          <option value="CASH" className="bg-surface text-text-primary">Cash</option>
+          <option value="Jazz-Cash" className="bg-surface text-text-primary">JazzCash</option>
         </select>
       </div>
 

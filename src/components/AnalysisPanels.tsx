@@ -1,14 +1,17 @@
 import React from 'react';
 import { Transaction, CATEGORY_COLORS, EXPENSE_CATEGORIES, MONTH_NAMES } from '../types';
-import { cn, formatPKR, getPercentage } from '../lib/utils';
-import { TrendingUp, TrendingDown, Target, Zap } from 'lucide-react';
+import { cn, formatPKR, getPercentage, copyToClipboard } from '../lib/utils';
+import { TrendingUp, TrendingDown, Target, Zap, Activity, Sparkles, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface AnalysisPanelsProps {
   transactions: Transaction[];
   borrowStatus?: 'All' | 'Owed' | 'Gets';
+  budgets?: Record<string, number>;
 }
 
-export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, borrowStatus = 'All' }) => {
+export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, borrowStatus = 'All', budgets = {} }) => {
+  // Existing Category Analysis
   const catAnalysis = EXPENSE_CATEGORIES.map(cat => ({
     cat,
     total: transactions.filter(r => r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0),
@@ -17,13 +20,15 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
 
   const maxTotal = catAnalysis[0]?.total || 1;
 
+  // Existing Borrow Ledger
   const borrowLedger = React.useMemo(() => {
-    const ledger: Record<string, { g: number; r: number }> = {};
+    const ledger: Record<string, { g: number; r: number; txns: Transaction[] }> = {};
     transactions.filter(r => r.category === 'BORROW').forEach(r => {
       const name = r.name.replace(/\s*(Rtn|Return|Httc|Previous|Pending)[^,]*/gi, '').trim() || r.name;
-      if (!ledger[name]) ledger[name] = { g: 0, r: 0 };
+      if (!ledger[name]) ledger[name] = { g: 0, r: 0, txns: [] };
       if (r.type === 'CREDIT') ledger[name].g += r.amount;
       else ledger[name].r += r.amount;
+      ledger[name].txns.push(r);
     });
     
     return Object.entries(ledger)
@@ -34,41 +39,121 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
         if (borrowStatus === 'Gets' && net >= 0) return false;
         return true;
       })
-      .sort((a, b) => (b[1].g + b[1].r) - (a[1].g + a[1].r))
+      .map(([name, data]) => ({
+        name,
+        g: data.g,
+        r: data.r,
+        txns: data.txns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      }))
+      .sort((a, b) => (b.g + b.r) - (a.g + a.r))
       .slice(0, 10);
   }, [transactions, borrowStatus]);
 
-  const monthlySummaries = React.useMemo(() => {
-    const activeMonths = MONTH_NAMES.filter(m => transactions.some(r => r.month === m));
-    return activeMonths.map(m => {
-      const inc = transactions.filter(r => r.month === m && r.type === 'DEBIT' && ['SALARY', 'INCOM'].includes(r.category)).reduce((s, r) => s + r.amount, 0);
-      const exp = transactions.filter(r => r.month === m && r.type === 'CREDIT' && !['BORROW', 'TRANSFER'].includes(r.category)).reduce((s, r) => s + r.amount, 0);
-      const topCat = EXPENSE_CATEGORIES.map(cat => ({
-        cat,
-        s: transactions.filter(r => r.month === m && r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0)
-      })).sort((a, b) => b.s - a.s)[0]?.cat || '—';
-      return { m, inc, exp, net: inc - exp, topCat };
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
+
+  const generateStatement = async (name: string, net: number, txns: Transaction[]) => {
+    const history = txns
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(t => {
+        const sign = t.type === 'DEBIT' ? '+' : '-';
+        return `- ${t.date}: ${sign}${t.amount.toLocaleString('en-PK')} (${t.name})`;
+      }).join('\n');
+
+    const summary = `Fiscal Statement for ${name}\n` +
+      `Current Balance: ${net > 0 ? 'OWES' : 'GETS'} ${formatPKR(Math.abs(net))}\n\n` +
+      `Complete History (Date Wise):\n` +
+      history +
+      `\n\nGenerated via Account 2026 Engine`;
+    
+    const success = await copyToClipboard(summary);
+    if (success) {
+      setCopiedId(name);
+      setTimeout(() => setCopiedId(null), 2000);
+    } else {
+      alert("Failed to copy. Please try again.");
+    }
+  };
+
+  // Advanced: Financial Health Score
+  const healthScore = React.useMemo(() => {
+    const income = transactions.filter(r => r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0);
+    const expense = transactions.filter(r => r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0);
+    
+    // Factors:
+    // 1. Savings Rate (40%)
+    const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
+    const savingsScore = Math.max(0, Math.min(savingsRate, 1) * 40); // Max 40pts for 25%+ savings
+    
+    // 2. Budget Adherence (40%)
+    let budgetOverages = 0;
+    Object.entries(budgets).forEach(([cat, limit]) => {
+      const spent = transactions.filter(r => r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0);
+      if (spent > limit) budgetOverages++;
     });
+    const budgetScore = Math.max(0, 40 - (budgetOverages * 10)); // Lose 10pts per category over budget
+
+    // 3. Borrow Position (20%)
+    const borrowNet = transactions.filter(r => r.category === 'BORROW').reduce((s, r) => s + (r.type === 'CREDIT' ? -r.amount : r.amount), 0);
+    const borrowScore = borrowNet >= 0 ? 20 : Math.max(0, 20 + (borrowNet / 5000)); // Lose points for net debt
+
+    return Math.round(savingsScore + budgetScore + borrowScore);
+  }, [transactions, budgets]);
+
+  // Advanced: Predictive Forecasting (Next Month)
+  const forecast = React.useMemo(() => {
+    const activeMonths = [...new Set(transactions.map(t => t.month))];
+    if (activeMonths.length < 2) return null;
+
+    const monthlyNets = activeMonths.map(m => {
+      const inc = transactions.filter(t => t.month === m && t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
+      const exp = transactions.filter(t => t.month === m && t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
+      return inc - exp;
+    });
+
+    const avgNet = monthlyNets.reduce((s, v) => s + v, 0) / monthlyNets.length;
+    return {
+      predictedNet: avgNet,
+      confidence: activeMonths.length > 3 ? 'High' : 'Moderate'
+    };
+  }, [transactions]);
+
+  // Advanced: Anomaly & Spike Detection
+  const anomalies = React.useMemo(() => {
+    const alerts: { cat: string; spike: number }[] = [];
+    EXPENSE_CATEGORIES.forEach(cat => {
+      const catTxns = transactions.filter(t => t.category === cat && t.type === 'CREDIT');
+      if (catTxns.length < 5) return;
+
+      const total = catTxns.reduce((s, t) => s + t.amount, 0);
+      const avg = total / catTxns.length;
+      
+      // Look for any txn that is 50% higher than average
+      const spike = catTxns.find(t => t.amount > avg * 1.5);
+      if (spike) {
+        alerts.push({ cat, spike: ((spike.amount - avg) / avg) * 100 });
+      }
+    });
+    return alerts.slice(0, 3);
   }, [transactions]);
 
   const insights = React.useMemo(() => {
     const totalExp = transactions.filter(r => r.type === 'CREDIT' && !['BORROW', 'TRANSFER'].includes(r.category)).reduce((s, r) => s + r.amount, 0);
     const activeDays = new Set(transactions.filter(r => r.type === 'CREDIT' && r.date).map(r => r.date)).size || 1;
-    const bigTxn = [...transactions].sort((a, b) => b.amount - a.amount)[0] || { name: '—', amount: 0 };
 
     return [
-      { label: 'Avg Daily Spend', value: formatPKR(totalExp / activeDays), sub: `Across ${activeDays} tracking days`, icon: <Zap size={14} /> },
-      { label: 'Biggest Velocity', value: bigTxn.name.slice(0, 20), sub: formatPKR(bigTxn.amount), icon: <TrendingUp size={14} /> },
-      { label: 'Efficiency Score', value: getPercentage(activeDays, 30), sub: 'Monthly activity consistency', icon: <Target size={14} /> },
-      { label: 'Burn Rate', value: formatPKR(totalExp), sub: 'Current filtered volume', icon: <TrendingDown size={14} /> },
+      { label: 'Fiscal Health', value: `${healthScore}/100`, sub: healthScore > 80 ? 'Exceptional Performance' : 'Growth Opportunities', icon: <Activity size={14} /> },
+      { label: 'Predictive Net', value: forecast ? formatPKR(forecast.predictedNet) : 'Insufficient Data', sub: `Forecasted for next interval (${forecast?.confidence || '—'})`, icon: <TrendingUp size={14} /> },
+      { label: 'Burn Velocity', value: formatPKR(totalExp / activeDays), sub: `Daily average liquidation`, icon: <Zap size={14} /> },
+      { label: 'Efficiency', value: getPercentage(activeDays, 30), sub: 'Tracking consistency index', icon: <Target size={14} /> },
     ];
-  }, [transactions]);
+  }, [transactions, healthScore, forecast]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+      {/* Category Intensity */}
       <div className="dashboard-card h-fit">
-        <h3 className="text-sm font-bold mb-0.5">Category Intensity</h3>
-        <p className="text-[11px] text-gray-500 mb-6">Distribution based on spending volume</p>
+        <h3 className="text-sm font-bold text-text-primary mb-0.5">Category Intensity</h3>
+        <p className="text-[11px] text-text-muted mb-6">Distribution based on spending volume</p>
         <div className="space-y-4">
           {catAnalysis.map(({ cat, total, count }) => (
             <div key={cat} className="flex flex-col gap-1.5">
@@ -86,81 +171,188 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
                     }}
                   />
                 </div>
-                <span className="text-[9px] text-gray-600 font-mono w-6 text-right">{count}x</span>
+                <span className="text-[9px] text-text-muted font-mono w-6 text-right">{count}x</span>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="dashboard-card h-fit">
-        <h3 className="text-sm font-bold mb-0.5">Borrow Ledger</h3>
-        <p className="text-[11px] text-gray-500 mb-6">Active relations and outstanding balances</p>
-        <div className="space-y-2">
-          {borrowLedger.map(([name, { g, r }]) => {
-            const net = g - r;
-            return (
-              <div key={name} className="flex justify-between items-center p-3 bg-surface-brighter border border-border-main rounded-xl hover:border-border-hover transition-colors">
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-text-primary">{name}</span>
-                  <div className="flex gap-3 text-[9px] font-mono mt-0.5">
-                    <span className="text-text-muted">Activity: {formatPKR(g + r)}</span>
+      {/* Center Column: Health & Forecast */}
+      <div className="flex flex-col gap-6">
+        {/* Health Score Widget */}
+        <div className="dashboard-card relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-4 opacity-5">
+             <Activity size={80} />
+           </div>
+           <h3 className="text-sm font-bold text-text-primary">Financial Health Score</h3>
+           <p className="text-[10px] text-text-muted mb-6 uppercase tracking-wider">Algorithmic Assessment</p>
+           
+           <div className="flex items-center justify-center p-6">
+              <div className="relative w-32 h-32">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="64" cy="64" r="58"
+                    stroke="currentColor" strokeWidth="8"
+                    fill="transparent" className="text-surface-brighter"
+                  />
+                  <motion.circle
+                    cx="64" cy="64" r="58"
+                    stroke="currentColor" strokeWidth="8"
+                    strokeDasharray={364.4}
+                    initial={{ strokeDashoffset: 364.4 }}
+                    animate={{ strokeDashoffset: 364.4 - (364.4 * healthScore) / 100 }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    fill="transparent"
+                    className={cn(
+                      "transition-colors",
+                      healthScore > 80 ? "text-income" : healthScore > 60 ? "text-accent-gold" : "text-expense"
+                    )}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold text-text-primary font-mono">{healthScore}</span>
+                  <span className="text-[8px] text-text-muted uppercase tracking-widest">Score</span>
+                </div>
+              </div>
+           </div>
+           <div className="text-center text-[10px] text-text-muted italic px-4">
+              {healthScore > 80 ? "Your fiscal management is top-tier. Keep maintaining these ratios." : "Your score is impacted by savings rates or budget overages."}
+           </div>
+        </div>
+
+        {/* Predictive Card */}
+        <div className="dashboard-card bg-gradient-to-br from-surface to-accent-gold/5 border-accent-gold/20">
+           <div className="flex items-center gap-2 mb-4">
+             <Sparkles size={18} className="text-accent-gold" />
+             <h3 className="text-sm font-bold text-text-primary">Predictive Outlook</h3>
+           </div>
+           {forecast ? (
+             <div className="space-y-4">
+                <div>
+                   <div className="text-[10px] text-text-muted uppercase tracking-widest mb-1">Estimated Next Month Balance</div>
+                   <div className="text-xl font-bold text-accent-gold font-mono">{formatPKR(forecast.predictedNet)}</div>
+                </div>
+                <div className="p-2.5 bg-accent-gold/10 rounded-xl border border-accent-gold/20">
+                   <p className="text-[10px] text-text-secondary leading-relaxed">
+                     Based on {forecast.confidence.toLowerCase()} confidence historical patterns, your liquidity is expected to {forecast.predictedNet > 0 ? 'increase' : 'shrink'}.
+                   </p>
+                </div>
+             </div>
+           ) : (
+             <div className="py-8 text-center text-text-muted text-xs opacity-50">
+                Register more data to unlock forecasting.
+             </div>
+           )}
+        </div>
+      </div>
+
+      {/* Right Column: Anomalies & Insights */}
+      <div className="flex flex-col gap-6">
+        {/* Anomaly Alerts */}
+        <div className="dashboard-card border-expense/20">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-expense" />
+              <h3 className="text-sm font-bold text-text-primary">Anomalies Detected</h3>
+            </div>
+            <span className="bg-expense/10 text-expense text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">{anomalies.length} Alerts</span>
+          </div>
+          
+          <div className="space-y-3">
+            {anomalies.length > 0 ? anomalies.map((a, i) => (
+              <div key={i} className="flex flex-col gap-1 p-3 bg-expense/5 border border-expense/10 rounded-xl">
+                 <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-text-primary uppercase tracking-widest">{a.cat} SPIKE</span>
+                    <span className="text-[10px] font-mono text-expense">+{a.spike.toFixed(0)}%</span>
+                 </div>
+                 <p className="text-[9px] text-text-muted leading-tight">Unexpected high-volume activity detected in this category compared to 30-day mean.</p>
+              </div>
+            )) : (
+              <div className="py-6 text-center text-[10px] text-text-muted italic opacity-50">
+                No significant spending spikes detected.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {insights.map((ins, i) => (
+            <div key={i} className="bg-surface border border-border-main p-3 rounded-2xl flex flex-col justify-between hover:border-border-hover transition-colors group">
+              <div className="flex items-center gap-2 text-text-muted mb-2 group-hover:text-accent-gold transition-colors">
+                {ins.icon}
+                <span className="text-[8px] font-bold uppercase tracking-widest">{ins.label}</span>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-text-primary font-mono">{ins.value}</div>
+                <div className="text-[8px] text-text-muted mt-1 leading-tight">{ins.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Borrow Ledger (Full Width) - Only show if has active balances */}
+      {borrowLedger.length > 0 && (
+        <div className="lg:col-span-3 dashboard-card">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-sm font-bold text-text-primary mb-0.5">Borrow Ledger</h3>
+              <p className="text-[11px] text-text-muted">Active relations and outstanding balances</p>
+            </div>
+            <div className="flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-income" />
+               <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Sync Active</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {borrowLedger.map(({ name, g, r, txns }) => {
+              const net = g - r;
+              return (
+                <div 
+                  key={name} 
+                  onClick={() => generateStatement(name, net, txns)}
+                  className="flex flex-col justify-between gap-3 p-3 bg-surface-brighter border border-border-main rounded-2xl hover:border-accent-gold/40 hover:bg-surface-brightest cursor-pointer transition-all group relative overflow-hidden active:scale-[0.98]"
+                >
+                  <div className="absolute top-0 right-0 p-1 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Activity size={40} />
+                  </div>
+                  
+                  <AnimatePresence>
+                    {copiedId === name && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-accent-gold/90 flex items-center justify-center z-10"
+                      >
+                        <span className="text-[10px] font-bold text-black uppercase tracking-widest flex items-center gap-1">
+                          <Zap size={10} fill="currentColor" /> Copied History
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-text-primary group-hover:text-accent-gold transition-colors truncate">{name}</span>
+                      <span className="text-[9px] text-text-muted uppercase tracking-tighter mt-0.5">Net Position</span>
+                    </div>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div className={cn("text-xs font-mono font-bold", net > 0 ? "text-expense" : "text-income")}>
+                      {net > 0 ? 'OWES' : 'GETS'} {formatPKR(Math.abs(net))}
+                    </div>
+                    <div className="text-[8px] text-text-muted font-mono opacity-50">Total: {formatPKR(g + r)}</div>
                   </div>
                 </div>
-                <div className={cn("text-xs font-mono font-bold", net > 0 ? "text-expense" : "text-income")}>
-                  {net > 0 ? 'OWES' : 'GETS'} {formatPKR(Math.abs(net))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="dashboard-card h-fit">
-          <h3 className="text-sm font-bold mb-0.5">Monthly Financial Flow</h3>
-          <p className="text-[11px] text-gray-500 mb-6">Comparative view of month-over-month results</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="text-[9px] font-bold text-gray-600 uppercase tracking-widest border-b border-border-main">
-                  <th className="pb-3 px-2">Month</th>
-                  <th className="pb-3 px-2">Income</th>
-                  <th className="pb-3 px-2">Spend</th>
-                  <th className="pb-3 px-2">Net</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-main/50">
-                {monthlySummaries.map(row => (
-                  <tr key={row.m} className="group hover:bg-surface-brighter">
-                    <td className="py-2.5 px-2 font-bold text-text-secondary group-hover:text-text-primary">{row.m.slice(0, 3)}</td>
-                    <td className="py-2.5 px-2 font-mono text-income">{formatPKR(row.inc)}</td>
-                    <td className="py-2.5 px-2 font-mono text-expense">{formatPKR(row.exp)}</td>
-                    <td className={cn("py-2.5 px-2 font-mono font-bold", row.net >= 0 ? "text-teal-main" : "text-expense")}>
-                      {formatPKR(row.net)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              );
+            })}
           </div>
-      </div>
-
-      <div className="dashboard-card h-fit flex flex-col">
-        <h3 className="text-sm font-bold mb-0.5">Financial Insights</h3>
-        <p className="text-[11px] text-gray-500 mb-6">Algorithmic markers and performance snapshots</p>
-        <div className="grid grid-cols-2 gap-4 flex-1">
-          {insights.map((ins, i) => (
-            <div key={i} className="bg-surface-brighter border border-border-main p-4 rounded-xl">
-              <div className="flex items-center gap-2 text-text-muted mb-1">
-                {ins.icon}
-                <span className="text-[9px] font-bold uppercase tracking-wider">{ins.label}</span>
-              </div>
-              <div className="text-sm font-bold text-accent-gold font-mono">{ins.value}</div>
-              <div className="text-[10px] text-text-muted mt-1 leading-tight">{ins.sub}</div>
-            </div>
-          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 };
+

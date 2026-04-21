@@ -37,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isOnline = status === 'online';
 
   return (
-    <nav className="sticky top-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-border-main px-4 sm:px-6 py-3 sm:h-[64px] flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+    <nav className="sticky top-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-border-main px-4 sm:px-6 pt-4 pb-3 sm:h-auto flex flex-col sm:flex-row items-center gap-4 sm:gap-6 shadow-sm">
       <div className="w-full sm:w-auto flex justify-between items-center sm:shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-accent-gold flex items-center justify-center text-black font-extrabold text-lg">A</div>
@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       <div className="w-full sm:flex-1 flex justify-center order-3 sm:order-none">
-        <div className="flex items-center w-full sm:w-auto bg-surface-brighter p-1 rounded-xl border border-border-main shadow-lg relative">
+        <div className="flex items-center w-full sm:w-auto bg-surface-brighter p-1 rounded-xl border border-border-main shadow-sm relative">
           <button 
             onClick={() => onViewChange('dashboard')}
             className={cn(

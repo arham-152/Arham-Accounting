@@ -33,7 +33,7 @@ const ChartCard: React.FC<{ title: string; sub: string; children: React.ReactNod
     className="dashboard-card p-4 sm:p-5"
   >
     <h3 className="text-xs sm:text-sm font-bold mb-0.5">{title}</h3>
-    <p className="text-[10px] sm:text-[11px] text-gray-500 mb-6">{sub}</p>
+    <p className="text-[10px] sm:text-[11px] text-text-muted mb-6">{sub}</p>
     <div className="relative h-[240px] sm:h-[280px]" style={height ? { height: `calc(${height}px * 0.85)` } : undefined}>
       {children}
     </div>
@@ -93,12 +93,13 @@ const commonOptions = {
 
 interface ChartsProps {
   transactions: Transaction[];
+  allTransactions: Transaction[];
   budgets: Record<string, number>;
   activeTab: 'overview' | 'category' | 'month';
   isDarkMode: boolean;
 }
 
-export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab, isDarkMode }) => {
+export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, budgets, activeTab, isDarkMode }) => {
   const textColor = isDarkMode ? '#a0a8b8' : '#64748b';
   const gridColor = isDarkMode ? 'rgba(31,36,48,0.5)' : 'rgba(203,213,225,0.4)';
   const tooltipBg = isDarkMode ? '#1e2330' : '#ffffff';
@@ -287,10 +288,76 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
         borderWidth: 2,
       }]
     };
-  }, [transactions]);  const renderOverview = () => (
+  }, [transactions]);  // Benchmark Analysis (3-Month Avg vs Current)
+  const benchmarkData = useMemo(() => {
+    // 1. Calculate 3-month average from allTransactions
+    const sortedAll = [...allTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const latestDate = sortedAll.length > 0 ? new Date(sortedAll[0].date) : new Date();
+    const anchorDate = new Date(latestDate.getFullYear(), latestDate.getMonth(), 1);
+    const threeMonthsAgo = new Date(anchorDate);
+    threeMonthsAgo.setMonth(anchorDate.getMonth() - 3);
+
+    const averages: Record<string, number> = {};
+    EXPENSE_CATEGORIES.forEach(cat => {
+      const windowTxns = allTransactions.filter(t => 
+        t.category === cat && 
+        t.type === 'CREDIT' && 
+        new Date(t.date) >= threeMonthsAgo && 
+        new Date(t.date) < anchorDate
+      );
+      averages[cat] = windowTxns.reduce((sum, t) => sum + t.amount, 0) / 3;
+    });
+
+    // 2. Calculate current month spending from allTransactions (specifically the latest month/anchor month)
+    const currentSpending: Record<string, number> = {};
+    EXPENSE_CATEGORIES.forEach(cat => {
+      currentSpending[cat] = allTransactions.filter(t => 
+        t.category === cat && 
+        t.type === 'CREDIT' && 
+        new Date(t.date) >= anchorDate
+      ).reduce((sum, t) => sum + t.amount, 0);
+    });
+
+    return {
+      labels: EXPENSE_CATEGORIES.map(c => c.length > 8 ? c.slice(0, 5) + '..' : c),
+      datasets: [
+        {
+          label: '3-Month Avg',
+          data: EXPENSE_CATEGORIES.map(c => averages[c] || 0),
+          backgroundColor: '#94a3b8aa', // Muted blue/gray for historical
+          borderColor: '#94a3b8',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: 'Current Month',
+          data: EXPENSE_CATEGORIES.map(c => currentSpending[c] || 0),
+          backgroundColor: EXPENSE_CATEGORIES.map(c => CATEGORY_COLORS[c] + 'bb'),
+          borderColor: EXPENSE_CATEGORIES.map(c => CATEGORY_COLORS[c]),
+          borderWidth: 1,
+          borderRadius: 4,
+        }
+      ]
+    };
+  }, [allTransactions, transactions]);
+
+  const renderOverview = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 pb-6">
       <ChartCard title="Overall Flow" sub="Income vs Expense vs Borrow comparison" delay={0.1}>
         <Bar data={compData} options={themeOptions} />
+      </ChartCard>
+
+      <ChartCard title="Benchmark Analysis" sub="Current vs 3-Month Historical Average" delay={0.15}>
+        <Bar data={benchmarkData} options={{
+          ...themeOptions,
+          scales: {
+            ...themeOptions.scales,
+            x: {
+              ...themeOptions.scales.x,
+              ticks: { ...themeOptions.scales.x.ticks, font: { size: 8 } }
+            }
+          }
+        }} />
       </ChartCard>
 
       <ChartCard title="Cumulative Spend" sub="Running total of all expenses" delay={0.2}>
