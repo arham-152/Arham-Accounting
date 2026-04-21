@@ -151,6 +151,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             <FileDown size={18} />
           </button>
           <button 
+            onClick={onReportClick}
+            className="p-2 rounded-lg border border-border-main text-text-muted transition-all hover:text-text-primary active:scale-90"
+            title="Generate custom report"
+          >
+            <FileText size={18} />
+          </button>
+          <button 
             onClick={onThemeToggle}
             className="p-2 rounded-lg border border-border-main text-text-muted transition-all hover:text-text-primary active:scale-90"
             title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
