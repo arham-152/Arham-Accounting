@@ -30,11 +30,11 @@ const ChartCard: React.FC<{ title: string; sub: string; children: React.ReactNod
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ duration: 0.6, delay, ease: [0.23, 1, 0.32, 1] }}
-    className="dashboard-card"
+    className="dashboard-card p-4 sm:p-5"
   >
-    <h3 className="text-sm font-bold mb-0.5">{title}</h3>
-    <p className="text-[11px] text-gray-500 mb-6">{sub}</p>
-    <div style={{ height }} className="relative">
+    <h3 className="text-xs sm:text-sm font-bold mb-0.5">{title}</h3>
+    <p className="text-[10px] sm:text-[11px] text-gray-500 mb-6">{sub}</p>
+    <div className="relative h-[240px] sm:h-[280px]" style={height ? { height: `calc(${height}px * 0.85)` } : undefined}>
       {children}
     </div>
   </motion.div>
@@ -288,12 +288,12 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
       }]
     };
   }, [transactions]);  const renderOverview = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
-      <ChartCard title="Income vs Expense vs Borrow" sub="Monthly financial flow grouped comparison" delay={0.1}>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 pb-6">
+      <ChartCard title="Overall Flow" sub="Income vs Expense vs Borrow comparison" delay={0.1}>
         <Bar data={compData} options={themeOptions} />
       </ChartCard>
 
-      <ChartCard title="Cumulative Spending Over Time" sub="Running total of all expenses by date" delay={0.2}>
+      <ChartCard title="Cumulative Spend" sub="Running total of all expenses" delay={0.2}>
         <Line data={cumulativeData as any} options={{
           ...themeOptions,
           scales: {
@@ -309,26 +309,35 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
         }} />
       </ChartCard>
 
-      <ChartCard title="Category Intensity" sub="Multi-dimensional spending focal points" delay={0.3} height={300}>
-        <Radar data={radarData} options={themeOptions} />
-      </ChartCard>
-
-      <ChartCard title="Monthly Performance Highlights" sub="Revenue vs Expenses trajectory" delay={0.4}>
-        <Line data={revenueTrendData} options={{
+      <ChartCard title="Category Intensity" sub="Spend focal points" delay={0.3} height={300}>
+        <Radar data={radarData} options={{
           ...themeOptions,
-          scales: {
-            ...themeOptions.scales,
-            x: { ...themeOptions.scales.x, title: { display: true, text: 'Month', color: textColor, font: { size: 10, weight: 'bold' } } },
-            y: { ...themeOptions.scales.y, title: { display: true, text: 'Amount', color: textColor, font: { size: 10, weight: 'bold' } } }
+          plugins: {
+            ...themeOptions.plugins,
+            legend: {
+              ...themeOptions.plugins.legend,
+              display: window.innerWidth > 640
+            }
           }
         }} />
       </ChartCard>
 
-      <ChartCard title="Monthly Category Spending Trend" sub="Detailed expense categories tracked over time" delay={0.5}>
+      <ChartCard title="Growth Highlights" sub="Financial trajectory" delay={0.4}>
+        <Line data={revenueTrendData} options={{
+          ...themeOptions,
+          scales: {
+            ...themeOptions.scales,
+            x: { ...themeOptions.scales.x, title: { display: window.innerWidth > 640, text: 'Month', color: textColor, font: { size: 10, weight: 'bold' } } },
+            y: { ...themeOptions.scales.y, title: { display: window.innerWidth > 640, text: 'Amount', color: textColor, font: { size: 10, weight: 'bold' } } }
+          }
+        }} />
+      </ChartCard>
+
+      <ChartCard title="Spending Trend" sub="Category tracking" delay={0.5}>
         <Line data={lineData} options={themeOptions} />
       </ChartCard>
       
-      <ChartCard title="Category Allocation" sub="Proportional breakdown of total spending" delay={0.6}>
+      <ChartCard title="Category Allocation" sub="Spending breakdown" delay={0.6}>
         <Doughnut 
           data={donutData} 
           options={{
@@ -338,7 +347,11 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
               ...themeOptions.plugins,
               legend: {
                 ...themeOptions.plugins.legend,
-                position: 'right' as const
+                position: window.innerWidth < 1024 ? 'bottom' : 'right' as const,
+                labels: {
+                  ...themeOptions.plugins.legend.labels,
+                  font: { size: 8 }
+                }
               },
               tooltip: {
                 ...themeOptions.plugins.tooltip,
@@ -351,11 +364,11 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
         />
       </ChartCard>
 
-      <ChartCard title="Stacked Monthly Composition" sub="Category layering per month" delay={0.7}>
+      <ChartCard title="Stacked Composition" sub="Layering per month" delay={0.7}>
         <Bar data={stackedData} options={themeOptions} />
       </ChartCard>
 
-      <ChartCard title="Payment Channel Distribution" sub="Cash vs Digital payment volumes" delay={0.8}>
+      <ChartCard title="Channel Distribution" sub="Payment volumes" delay={0.8}>
         <PolarArea 
           data={{
             labels: ['Cash Exp', 'Jazz Exp', 'Cash Inc', 'Jazz Inc'],
@@ -371,7 +384,16 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, budgets, activeTab
               borderWidth: 1.5
             }]
           }}
-          options={themeOptions}
+          options={{
+            ...themeOptions,
+            plugins: {
+              ...themeOptions.plugins,
+              legend: {
+                ...themeOptions.plugins.legend,
+                position: 'bottom'
+              }
+            }
+          }}
         />
       </ChartCard>
     </div>

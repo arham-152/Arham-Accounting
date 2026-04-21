@@ -498,26 +498,30 @@ export default function App() {
 
             {/* Charts Section */}
             <section>
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[3px]">Trend Analytics</h2>
-                <div className="flex-1 h-px bg-border-main" />
+              <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-3 mb-6">
+                <div className="flex items-center gap-3 shrink-0">
+                  <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[3px]">Trend Analytics</h2>
+                  <div className="flex-1 lg:hidden h-px bg-border-main" />
+                </div>
                 
-                <div className="flex items-center gap-1 bg-surface-brighter p-1 rounded-xl border border-border-main">
+                <div className="hidden lg:block flex-1 h-px bg-border-main" />
+                
+                <div className="flex items-center gap-1 bg-surface-brighter p-1 rounded-xl border border-border-main overflow-x-auto scrollbar-none">
                   <button 
                     onClick={() => setChartTab('overview')}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'overview' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'overview' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
                   >
                     Overview
                   </button>
                   <button 
                     onClick={() => setChartTab('category')}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'category' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'category' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
                   >
                     Category Analysis
                   </button>
                   <button 
                     onClick={() => setChartTab('month')}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'month' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'month' ? 'bg-accent-gold text-black' : 'text-gray-500 hover:text-white'}`}
                   >
                     Monthly Breakdown
                   </button>
@@ -525,10 +529,10 @@ export default function App() {
 
                 <button 
                   onClick={() => setIsReportModalOpen(true)}
-                  className="flex items-center gap-2 text-[10px] font-bold bg-white/5 border border-border-main px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all active:scale-95"
+                  className="hidden sm:flex items-center gap-2 text-[10px] font-bold bg-white/5 border border-border-main px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all active:scale-95 whitespace-nowrap"
                 >
                   <FileText size={14} className="text-accent-gold" />
-                  <span>Generate Custom Report</span>
+                  <span>Custom Report</span>
                 </button>
               </div>
               <Charts transactions={filteredData} budgets={budgets} activeTab={chartTab} />
