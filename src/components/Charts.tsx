@@ -106,7 +106,10 @@ const commonOptions = {
       padding: 10,
       bodyFont: { family: 'JetBrains Mono', size: 11 },
       callbacks: {
-        label: (context: any) => ` ${formatPKR(context.parsed.y || context.parsed || 0)}`
+        label: (context: any) => {
+          const val = context.chart.options.indexAxis === 'y' ? context.parsed.x : context.parsed.y;
+          return ` ${formatPKR(val || 0)}`;
+        }
       },
       intersect: false,
       mode: 'index' as const,
@@ -114,16 +117,29 @@ const commonOptions = {
   },
   scales: {
     x: {
-      ticks: { color: '#6b7280', font: { size: 9 } },
+      ticks: { 
+        color: '#6b7280', 
+        font: { size: 9 },
+        callback: function(this: any, val: any) {
+          const axis = this.chart.options.scales.x;
+          if (axis.type === 'category' || !this.chart.scales.x.ticks) return this.getLabelForValue(val);
+          if (typeof val !== 'number') return val;
+          if (Math.abs(val) >= 1000) return `₨${(val/1000).toFixed(Math.abs(val) >= 10000 ? 0 : 1)}k`;
+          return `₨${val}`;
+        }
+      },
       grid: { color: 'rgba(31,36,48,0.5)' }
     },
     y: {
       ticks: { 
         color: '#6b7280', 
         font: { size: 9 },
-        callback: (value: any) => {
-          if (value >= 1000) return `₨${(value/1000).toFixed(value >= 10000 ? 0 : 1)}k`;
-          return `₨${value}`;
+        callback: function(this: any, val: any) {
+          // If this is the category axis, don't format as currency
+          if (this.chart.options.indexAxis === 'y') return this.getLabelForValue(val);
+          if (typeof val !== 'number') return val;
+          if (Math.abs(val) >= 1000) return `₨${(val/1000).toFixed(Math.abs(val) >= 10000 ? 0 : 1)}k`;
+          return `₨${val}`;
         }
       },
       grid: { color: 'rgba(31,36,48,0.5)' }
@@ -675,6 +691,11 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
                 options={{
                   ...commonOptions,
                   indexAxis: 'y' as const,
+                  interaction: {
+                    mode: 'nearest',
+                    axis: 'y',
+                    intersect: true
+                  },
                   plugins: {
                     ...commonOptions.plugins,
                     legend: { display: false }

@@ -229,7 +229,7 @@ export default function App() {
         if (filters.channel === 'CASH' && r.from !== 'CASH') return false;
         if (filters.channel === 'Jazz-Cash' && r.from !== 'Jazz-Cash') return false;
       }
-      if (filters.search && !(r.name + r.notes + r.category + r.sr).toLowerCase().includes(filters.search.toLowerCase())) return false;
+      if (filters.search && !(r.name + r.notes + (r.category || '') + (r.sr || '')).toLowerCase().includes(filters.search.toLowerCase())) return false;
       return true;
     });
   }, [allData, filters]);
@@ -237,41 +237,49 @@ export default function App() {
   const categories = useMemo(() => [...new Set(allData.map(r => r.category))].filter(Boolean), [allData]);
 
   const kpis = useMemo(() => {
-    const income = filteredData.filter(r => r.type === 'DEBIT' && (['SALARY', 'INCOM', 'INCOME'].includes(r.category) || r.category === 'MISLINIUS')).reduce((s, r) => s + r.amount, 0);
-    const expense = filteredData.filter(r => r.type === 'CREDIT' && !['BORROW', 'TRANSFER', 'SAVING'].includes(r.category.toUpperCase())).reduce((s, r) => s + r.amount, 0);
+    const income = filteredData.filter(r => r.type === 'DEBIT' && (['SALARY', 'INCOM', 'INCOME'].includes((r.category || '').toUpperCase()) || (r.category || '').toUpperCase() === 'MISLINIUS')).reduce((s, r) => s + r.amount, 0);
+    const expense = filteredData.filter(r => r.type === 'CREDIT' && !['BORROW', 'TRANSFER', 'SAVING'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0);
     
     // Just sum of "borrow" amount as requested
-    const borrow = filteredData.filter(r => r.category === 'BORROW').reduce((s, r) => s + r.amount, 0);
+    const borrow = filteredData.filter(r => (r.category || '').toUpperCase() === 'BORROW').reduce((s, r) => s + r.amount, 0);
     
     // Only sum of "saving" type/category as requested
-    const savings = filteredData.filter(r => r.type === 'SAVING' || r.category.toUpperCase() === 'SAVING').reduce((s, r) => s + r.amount, 0);
+    const savings = filteredData.filter(r => r.type === 'SAVING' || (r.category || '').toUpperCase() === 'SAVING').reduce((s, r) => s + r.amount, 0);
     
-    // Cash Logic following user's precise step guide
+    const isCashArr = (c: string) => (c || '').toUpperCase() === 'CASH';
+    const isAccountArr = (c: string) => {
+      const u = (c || '').toUpperCase();
+      return u !== 'CASH' && u !== 'OTHER' && u !== '';
+    };
+
+    // Cash Logic following user's precise step guide - responsive to filters
+    const cashData = filteredData;
     // A: SUM TOTAL DEBIT CASH (Income directly into cash)
-    const cashA = filteredData.filter(r => r.to === 'CASH' && r.type === 'DEBIT' && r.category !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const cashA = cashData.filter(r => isCashArr(r.to) && r.type === 'DEBIT' && (r.category || '').toUpperCase() !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
     // B: SUM TOTAL CASH CONVERTED FROM JAZZCASH/OTHERS TO CASH (Transfer To Cash)
-    const cashB = filteredData.filter(r => r.category === 'TRANSFER' && r.to === 'CASH').reduce((s, r) => s + r.amount, 0);
+    const cashB = cashData.filter(r => (r.category || '').toUpperCase() === 'TRANSFER' && isCashArr(r.to)).reduce((s, r) => s + r.amount, 0);
     // C: SUM OF TOTAL CREDIT CASH (Standard expenses paid via cash)
-    const cashC = filteredData.filter(r => r.from === 'CASH' && r.type === 'CREDIT' && r.category !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const cashC = cashData.filter(r => isCashArr(r.from) && r.type === 'CREDIT' && (r.category || '').toUpperCase() !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
     // D: SUM OF TOTAL CASH CONVERTED OR TRANSFER TO JAZZCASH/OTHERS (Transfer From Cash)
-    const cashD = filteredData.filter(r => r.from === 'CASH' && r.category === 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const cashD = cashData.filter(r => isCashArr(r.from) && (r.category || '').toUpperCase() === 'TRANSFER').reduce((s, r) => s + r.amount, 0);
     
     const totalCash = (cashA + cashB) - (cashC + cashD);
     
     // Total Accounts Balance (Mirrored Logic for everything not 'CASH')
+    const accData = filteredData;
     // A': Income into digital accounts
-    const accA = filteredData.filter(r => r.to !== 'CASH' && r.to !== 'OTHER' && r.to !== '' && r.type === 'DEBIT' && r.category !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const accA = accData.filter(r => isAccountArr(r.to) && r.type === 'DEBIT' && (r.category || '').toUpperCase() !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
     // B': Transferred into digital accounts from elsewhere
-    const accB = filteredData.filter(r => r.category === 'TRANSFER' && r.to !== 'CASH' && r.to !== 'OTHER' && r.to !== '').reduce((s, r) => s + r.amount, 0);
+    const accB = accData.filter(r => (r.category || '').toUpperCase() === 'TRANSFER' && isAccountArr(r.to)).reduce((s, r) => s + r.amount, 0);
     // C': Expenses from digital accounts
-    const accC = filteredData.filter(r => r.from !== 'CASH' && r.type === 'CREDIT' && r.category !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const accC = accData.filter(r => isAccountArr(r.from) && r.type === 'CREDIT' && (r.category || '').toUpperCase() !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
     // D': Transferred from digital accounts to elsewhere
-    const accD = filteredData.filter(r => r.from !== 'CASH' && r.category === 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const accD = accData.filter(r => isAccountArr(r.from) && (r.category || '').toUpperCase() === 'TRANSFER').reduce((s, r) => s + r.amount, 0);
     
     const totalAccounts = (accA + accB) - (accC + accD);
     
     // Net Borrow Standing (Positive = Owed to us, Negative = We owe)
-    const borrowNet = filteredData.filter(r => r.category === 'BORROW').reduce((s, r) => s + (r.type === 'CREDIT' ? r.amount : -r.amount), 0);
+    const borrowNet = filteredData.filter(r => (r.category || '').toUpperCase() === 'BORROW').reduce((s, r) => s + (r.type === 'CREDIT' ? r.amount : -r.amount), 0);
     
     return { income, expense, net: income - expense, borrow, savings, totalCash, totalAccounts, borrowNet };
   }, [filteredData]);

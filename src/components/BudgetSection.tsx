@@ -55,7 +55,7 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
     });
 
     return result;
-  }, [transactions]);
+  }, [transactions, allTransactions]);
 
   const categorySpending = expenseCategories.map(cat => {
     const spent = transactions
@@ -72,9 +72,16 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
     return { cat, spent, limit, remaining, percent, isFallback };
   });
 
+  const totals = React.useMemo(() => {
+    const totalSpent = categorySpending.reduce((sum, c) => sum + c.spent, 0);
+    const totalBudgets = expenseCategories.reduce((sum, cat) => sum + (budgets[cat] || 0), 0);
+    const totalAvg = expenseCategories.reduce((sum, cat) => sum + (averages[cat] || 0), 0);
+    return { totalSpent, totalBudgets, totalAvg };
+  }, [categorySpending, budgets, averages]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-      <div className="lg:col-span-2 dashboard-card">
+      <div className="lg:col-span-2 dashboard-card flex flex-col">
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-2 group/info relative">
             <div>
@@ -106,7 +113,7 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 flex-1">
           {categorySpending.map(({ cat, spent, limit, remaining, percent, isFallback }) => (
             <div key={cat} className="space-y-2">
               <div className="flex justify-between items-end">
@@ -147,13 +154,29 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
             </div>
           ))}
         </div>
+
+        {/* Total Summary Footer */}
+        <div className="mt-8 pt-6 border-t border-border-main/50 flex justify-between items-center bg-surface-brighter/30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-4 rounded-b-3xl">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-text-muted uppercase tracking-[2px]">Total Monthly Flow</span>
+            <span className="text-[9px] text-text-muted/60">Comprehensive category aggregate</span>
+          </div>
+          <div className="text-right">
+            <div className="text-sm font-black font-mono text-accent-gold">
+              {formatPKR(totals.totalSpent)}
+            </div>
+            <div className="text-[9px] text-text-muted font-bold uppercase tracking-tight">
+              sum of total spending in current month
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="dashboard-card">
+      <div className="dashboard-card flex flex-col">
         <h3 className="text-sm font-bold mb-0.5">Manage Targets</h3>
         <p className="text-[11px] text-text-muted mb-6">Set monthly limits for each category</p>
         
-        <div className="space-y-6">
+        <div className="space-y-6 flex-1">
           <div className="grid grid-cols-2 gap-4 pb-2 border-b border-border-main">
             <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Manual Setup</span>
             <div className="group/avg relative">
@@ -190,6 +213,28 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Manage Targets Summary Footer */}
+        <div className="mt-8 pt-6 border-t border-border-main/50 space-y-4 bg-surface-brighter/30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-4 rounded-b-3xl">
+          <div className="flex justify-between items-end border-b border-border-main/30 pb-3">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Manual Total</span>
+              <div className="text-xs font-bold text-text-primary font-mono">{formatPKR(totals.totalBudgets)}</div>
+            </div>
+            <div className="text-[8px] text-text-muted font-bold uppercase tracking-tighter text-right w-1/2 leading-tight">
+              sum of monthly set budget (manual setup)
+            </div>
+          </div>
+          <div className="flex justify-between items-end">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Average Total</span>
+              <div className="text-xs font-bold text-accent-gold font-mono">{formatPKR(totals.totalAvg)}</div>
+            </div>
+            <div className="text-[8px] text-text-muted font-bold uppercase tracking-tighter text-right w-1/2 leading-tight">
+              sum of three months average
+            </div>
+          </div>
         </div>
       </div>
     </div>
