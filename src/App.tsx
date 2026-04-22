@@ -248,7 +248,7 @@ export default function App() {
     
     // Cash Logic following user's precise step guide
     // A: SUM TOTAL DEBIT CASH (Income directly into cash)
-    const cashA = filteredData.filter(r => r.from === 'CASH' && r.type === 'DEBIT' && r.category !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const cashA = filteredData.filter(r => r.to === 'CASH' && r.type === 'DEBIT' && r.category !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
     // B: SUM TOTAL CASH CONVERTED FROM JAZZCASH/OTHERS TO CASH (Transfer To Cash)
     const cashB = filteredData.filter(r => r.category === 'TRANSFER' && r.to === 'CASH').reduce((s, r) => s + r.amount, 0);
     // C: SUM OF TOTAL CREDIT CASH (Standard expenses paid via cash)
@@ -260,7 +260,7 @@ export default function App() {
     
     // Total Accounts Balance (Mirrored Logic for everything not 'CASH')
     // A': Income into digital accounts
-    const accA = filteredData.filter(r => r.from !== 'CASH' && r.type === 'DEBIT' && r.category !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const accA = filteredData.filter(r => r.to !== 'CASH' && r.to !== 'OTHER' && r.to !== '' && r.type === 'DEBIT' && r.category !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
     // B': Transferred into digital accounts from elsewhere
     const accB = filteredData.filter(r => r.category === 'TRANSFER' && r.to !== 'CASH' && r.to !== 'OTHER' && r.to !== '').reduce((s, r) => s + r.amount, 0);
     // C': Expenses from digital accounts

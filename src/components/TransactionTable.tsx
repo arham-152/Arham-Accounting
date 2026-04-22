@@ -344,7 +344,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             </thead>
             <tbody className="divide-y divide-border-main">
               <AnimatePresence mode="popLayout" initial={false}>
-                {filteredTransactions.slice(0, 100).map((r, idx) => (
+                {filteredTransactions.map((r, idx) => (
                   <motion.tr 
                     key={r.sr} 
                     layout

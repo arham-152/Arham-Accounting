@@ -84,7 +84,10 @@ const commonOptions = {
       ticks: { 
         color: '#6b7280', 
         font: { size: 9 },
-        callback: (value: any) => `₨${Math.round(value/1000)}k`
+        callback: (value: any) => {
+          if (value >= 1000) return `₨${(value/1000).toFixed(value >= 10000 ? 0 : 1)}k`;
+          return `₨${value}`;
+        }
       },
       grid: { color: 'rgba(31,36,48,0.5)' }
     }
@@ -144,9 +147,21 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
     }
   }), [isDarkMode, textColor, gridColor, tooltipBg, tooltipBorder]);
 
-  const activeMonths = useMemo(() => {
-    return MONTH_NAMES.filter(m => transactions.some(r => r.month === m))
-      .sort((a, b) => MONTH_NAMES.indexOf(a) - MONTH_NAMES.indexOf(b));
+  const timeline = useMemo(() => {
+    const pairs = transactions.map(t => ({ month: t.month, year: t.year }));
+    const unique = Array.from(new Set(pairs.map(p => `${p.month} ${p.year}`)))
+      .map((s: string) => {
+        const [month, year] = s.split(' ');
+        return { 
+          month, 
+          year, 
+          label: [month.slice(0, 3), year], // Multi-line label: Month top, Year bottom
+          key: s,
+          sortVal: parseInt(year) * 100 + MONTH_NAMES.indexOf(month)
+        };
+      })
+      .sort((a, b) => a.sortVal - b.sortVal);
+    return unique;
   }, [transactions]);
 
   const categories = useMemo(() => {
@@ -155,10 +170,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
 
   // Line Chart Data
   const lineData = {
-    labels: activeMonths,
+    labels: timeline.map(t => t.label),
     datasets: EXPENSE_CATEGORIES.map(cat => ({
       label: cat,
-      data: activeMonths.map(m => transactions.filter(r => r.month === m && r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0)),
+      data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0)),
       borderColor: CATEGORY_COLORS[cat],
       backgroundColor: CATEGORY_COLORS[cat] + '22',
       tension: 0.4,
@@ -194,10 +209,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
 
   // Stacked Bar Data
   const stackedData = {
-    labels: activeMonths,
+    labels: timeline.map(t => t.label),
     datasets: EXPENSE_CATEGORIES.map(cat => ({
       label: cat,
-      data: activeMonths.map(m => transactions.filter(r => r.month === m && r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0)),
+      data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0)),
       backgroundColor: CATEGORY_COLORS[cat],
       stack: 'total'
     }))
@@ -205,11 +220,11 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
 
   // Monthly Revenue Trend (Income vs Expenses)
   const revenueTrendData = {
-    labels: activeMonths,
+    labels: timeline.map(t => t.label),
     datasets: [
       {
         label: 'Monthly Income',
-        data: activeMonths.map(m => transactions.filter(r => r.month === m && r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0)),
+        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0)),
         borderColor: '#22c55e',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         fill: true,
@@ -220,7 +235,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       },
       {
         label: 'Monthly Expenses',
-        data: activeMonths.map(m => transactions.filter(r => r.month === m && r.type === 'CREDIT' && r.category !== 'BORROW').reduce((s, r) => s + r.amount, 0)),
+        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.type === 'CREDIT' && r.category !== 'BORROW').reduce((s, r) => s + r.amount, 0)),
         borderColor: '#ef4444',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         fill: true,
@@ -234,23 +249,23 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
 
   // Comparative Chart Data
   const compData = {
-    labels: activeMonths,
+    labels: timeline.map(t => t.label),
     datasets: [
       {
         label: 'Income',
-        data: activeMonths.map(m => transactions.filter(r => r.month === m && r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0)),
+        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0)),
         backgroundColor: '#22c55e',
         borderRadius: 4,
       },
       {
         label: 'Expense',
-        data: activeMonths.map(m => transactions.filter(r => r.month === m && r.type === 'CREDIT' && r.category !== 'BORROW').reduce((s, r) => s + r.amount, 0)),
+        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.type === 'CREDIT' && r.category !== 'BORROW').reduce((s, r) => s + r.amount, 0)),
         backgroundColor: '#ef4444',
         borderRadius: 4,
       },
       {
         label: 'Borrow',
-        data: activeMonths.map(m => transactions.filter(r => r.month === m && r.category === 'BORROW').reduce((s, r) => s + r.amount, 0)),
+        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.category === 'BORROW').reduce((s, r) => s + r.amount, 0)),
         backgroundColor: '#f59e0b',
         borderRadius: 4,
       }
@@ -290,31 +305,45 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
     };
   }, [transactions]);  // Benchmark Analysis (3-Month Avg vs Current)
   const benchmarkData = useMemo(() => {
-    // 1. Calculate 3-month average from allTransactions
-    const sortedAll = [...allTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const latestDate = sortedAll.length > 0 ? new Date(sortedAll[0].date) : new Date();
-    const anchorDate = new Date(latestDate.getFullYear(), latestDate.getMonth(), 1);
-    const threeMonthsAgo = new Date(anchorDate);
-    threeMonthsAgo.setMonth(anchorDate.getMonth() - 3);
+    // 1. Identify the reference month/year (latest in the shown transactions)
+    const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    if (sorted.length === 0) return { labels: [], datasets: [] };
+    
+    const curMonth = sorted[0].month;
+    const curYear = sorted[0].year;
+    
+    // Find target months for average
+    const curIdx = MONTH_NAMES.indexOf(curMonth);
+    const targetMonths: { month: string, year: string }[] = [];
+    
+    for (let i = 1; i <= 3; i++) {
+       let mIdx = curIdx - i;
+       let y = parseInt(curYear);
+       if (mIdx < 0) {
+         mIdx += 12;
+         y -= 1;
+       }
+       targetMonths.push({ month: MONTH_NAMES[mIdx], year: String(y) });
+    }
 
     const averages: Record<string, number> = {};
-    EXPENSE_CATEGORIES.forEach(cat => {
-      const windowTxns = allTransactions.filter(t => 
-        t.category === cat && 
-        t.type === 'CREDIT' && 
-        new Date(t.date) >= threeMonthsAgo && 
-        new Date(t.date) < anchorDate
-      );
-      averages[cat] = windowTxns.reduce((sum, t) => sum + t.amount, 0) / 3;
-    });
-
-    // 2. Calculate current month spending from allTransactions (specifically the latest month/anchor month)
     const currentSpending: Record<string, number> = {};
+
     EXPENSE_CATEGORIES.forEach(cat => {
-      currentSpending[cat] = allTransactions.filter(t => 
+      // 3-Month Historical Average
+      const histTxns = allTransactions.filter(t => 
         t.category === cat && 
         t.type === 'CREDIT' && 
-        new Date(t.date) >= anchorDate
+        targetMonths.some(tm => tm.month === t.month && tm.year === t.year)
+      );
+      averages[cat] = histTxns.reduce((sum, t) => sum + t.amount, 0) / 3;
+
+      // Current Month Spending
+      currentSpending[cat] = transactions.filter(t => 
+        t.category === cat && 
+        t.type === 'CREDIT' &&
+        t.month === curMonth &&
+        t.year === curYear
       ).reduce((sum, t) => sum + t.amount, 0);
     });
 
@@ -365,13 +394,16 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
           ...themeOptions,
           scales: {
             ...themeOptions.scales,
-            y: {
-              ...themeOptions.scales.y,
-              ticks: {
-                ...themeOptions.scales.y.ticks,
-                callback: (value: any) => `₨${Math.round(value/1000)}k`
+              y: {
+                ...themeOptions.scales.y,
+                ticks: {
+                  ...themeOptions.scales.y.ticks,
+                  callback: (value: any) => {
+                    if (value >= 1000) return `₨${(value/1000).toFixed(value >= 10000 ? 0 : 1)}k`;
+                    return `₨${value}`;
+                  }
+                }
               }
-            }
           }
         }} />
       </ChartCard>
@@ -470,10 +502,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
       {categories.map(cat => {
         const data = {
-          labels: MONTH_NAMES.map(m => m.slice(0, 3)),
+          labels: timeline.map(t => t.label),
           datasets: [{
             label: cat,
-            data: MONTH_NAMES.map(m => transactions.filter(t => t.month === m && t.category === cat && t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)),
+            data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.category === cat && r.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)),
             backgroundColor: (CATEGORY_COLORS[cat] || '#6b7280') + 'bb',
             borderColor: CATEGORY_COLORS[cat] || '#6b7280',
             borderWidth: 1,
@@ -494,13 +526,14 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
 
   const renderMonthlyBreakdown = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
-      {activeMonths.map(month => {
-        const monthCats = [...new Set(transactions.filter(t => t.month === month).map(t => t.category))].filter((c): c is string => Boolean(c));
+      {timeline.map(t => {
+        const monthTransactions = transactions.filter(r => r.month === t.month && r.year === t.year);
+        const monthCats = [...new Set(monthTransactions.map(t => t.category))].filter((c): c is string => Boolean(c));
         const data = {
           labels: monthCats.map(c => c.length > 8 ? c.slice(0, 6) + '..' : c),
           datasets: [{
             label: 'Amount',
-            data: monthCats.map(c => transactions.filter(t => t.month === month && t.category === c && t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)),
+            data: monthCats.map(c => monthTransactions.filter(t => t.category === c && t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)),
             backgroundColor: monthCats.map(c => (CATEGORY_COLORS[c] || '#6b7280') + 'bb'),
             borderColor: monthCats.map(c => CATEGORY_COLORS[c] || '#6b7280'),
             borderWidth: 1,
@@ -508,7 +541,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
           }]
         };
         return (
-          <ChartCard key={month} title={month.toUpperCase()} sub={`Category-wise breakdown for ${month}`} height={240}>
+          <ChartCard key={t.key} title={t.label.toUpperCase()} sub={`Category-wise breakdown for ${t.label}`} height={240}>
             <Bar data={data} options={{
               ...themeOptions,
               plugins: { ...themeOptions.plugins, legend: { display: false } }
