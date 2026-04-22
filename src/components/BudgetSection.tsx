@@ -1,6 +1,7 @@
 import React from 'react';
 import { Transaction, CATEGORY_COLORS } from '../types';
 import { formatPKR, cn } from '../lib/utils';
+import { Info, Zap } from 'lucide-react';
 
 interface BudgetSectionProps {
   transactions: Transaction[];
@@ -70,10 +71,34 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
       <div className="lg:col-span-2 dashboard-card">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h3 className="text-sm font-bold mb-0.5">Category-Wise Budgeting</h3>
-            <p className="text-[11px] text-text-muted">Track your spending against monthly targets</p>
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-2 group/info relative">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold mb-0.5">Category-Wise Budgeting</h3>
+                <div className="cursor-help text-text-muted hover:text-accent-gold transition-colors">
+                  <Info size={14} />
+                </div>
+              </div>
+              <p className="text-[11px] text-text-muted">Track your spending against monthly targets</p>
+            </div>
+
+            {/* Budget Info Tooltip */}
+            <div className="absolute left-0 top-full mt-2 w-72 p-4 bg-surface-brightest border border-border-main rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 pointer-events-none">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap size={14} className="text-accent-gold" />
+                <span className="text-[10px] uppercase font-black text-accent-gold tracking-widest">Budget Logic</span>
+              </div>
+              <p className="text-[11px] text-text-primary leading-relaxed">
+                Tracks current month spending per category. 
+                <br /><br />
+                <span className="text-income font-bold">Green:</span> Under 85% of limit.
+                <br />
+                <span className="text-borrow font-bold">Yellow:</span> Over 85% of limit.
+                <br />
+                <span className="text-expense font-bold">Red:</span> Over-budget.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -126,7 +151,18 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 pb-2 border-b border-border-main">
             <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Manual Setup</span>
-            <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">3-Month Avg</span>
+            <div className="group/avg relative">
+              <div className="flex items-center gap-1 cursor-help">
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">3-Month Avg</span>
+                <Info size={10} className="text-text-muted group-hover/avg:text-accent-gold" />
+              </div>
+              {/* Avg Logic Tooltip */}
+              <div className="absolute right-0 top-full mt-2 w-56 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all z-50 pointer-events-none">
+                <p className="text-[9px] text-text-primary leading-relaxed font-medium">
+                  The <span className="text-accent-gold font-bold">3-Month Avg</span> is calculated by looking at the total spending of the 3 <span className="italic">previous full months</span> and dividing by 3.
+                </p>
+              </div>
+            </div>
           </div>
 
           {expenseCategories.map(cat => (

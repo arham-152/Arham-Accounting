@@ -1,7 +1,7 @@
 import React from 'react';
 import { Transaction, CATEGORY_COLORS, EXPENSE_CATEGORIES, MONTH_NAMES } from '../types';
 import { cn, formatPKR, getPercentage, copyToClipboard } from '../lib/utils';
-import { TrendingUp, TrendingDown, Target, Zap, Activity, Sparkles, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Zap, Activity, Sparkles, AlertTriangle, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface AnalysisPanelsProps {
@@ -152,7 +152,17 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
       {/* Category Intensity */}
       <div className="dashboard-card h-fit">
-        <h3 className="text-sm font-bold text-text-primary mb-0.5">Category Intensity</h3>
+        <div className="flex items-center justify-between mb-0.5">
+          <h3 className="text-sm font-bold text-text-primary">Category Intensity</h3>
+          <div className="group/hint relative">
+            <Info size={12} className="text-text-muted cursor-help hover:text-accent-gold transition-colors" />
+            <div className="absolute right-0 top-full mt-2 w-56 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/hint:opacity-100 group-hover/hint:visible transition-all z-50 pointer-events-none">
+              <p className="text-[9px] text-text-primary leading-relaxed font-medium">
+                Plots historical spending volume per category to highlight where your money is most concentrated.
+              </p>
+            </div>
+          </div>
+        </div>
         <p className="text-[11px] text-text-muted mb-6">Distribution based on spending volume</p>
         <div className="space-y-4">
           {catAnalysis.map(({ cat, total, count }) => (
@@ -185,7 +195,25 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
            <div className="absolute top-0 right-0 p-4 opacity-5">
              <Activity size={80} />
            </div>
-           <h3 className="text-sm font-bold text-text-primary">Financial Health Score</h3>
+           
+           <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-text-primary">Financial Health Score</h3>
+            <div className="group/health relative">
+              <Info size={12} className="text-text-muted cursor-help hover:text-accent-gold transition-colors" />
+              <div className="absolute right-0 top-full mt-2 w-64 p-4 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all z-50 pointer-events-none">
+                <div className="flex items-center gap-2 mb-2 text-accent-gold">
+                  <Zap size={10} />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-accent-gold">Algorithm</span>
+                </div>
+                <p className="text-[10px] text-text-primary leading-relaxed">
+                  A weighted score based on:
+                  <br />• 40% Savings Rate
+                  <br />• 40% Budget Adherence
+                  <br />• 20% Net Debt Position
+                </p>
+              </div>
+            </div>
+           </div>
            <p className="text-[10px] text-text-muted mb-6 uppercase tracking-wider">Algorithmic Assessment</p>
            
            <div className="flex items-center justify-center p-6">
@@ -223,9 +251,19 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
 
         {/* Predictive Card */}
         <div className="dashboard-card bg-gradient-to-br from-surface to-accent-gold/5 border-accent-gold/20">
-           <div className="flex items-center gap-2 mb-4">
-             <Sparkles size={18} className="text-accent-gold" />
-             <h3 className="text-sm font-bold text-text-primary">Predictive Outlook</h3>
+           <div className="flex items-center justify-between mb-4">
+             <div className="flex items-center gap-2">
+               <Sparkles size={18} className="text-accent-gold" />
+               <h3 className="text-sm font-bold text-text-primary">Predictive Outlook</h3>
+             </div>
+             <div className="group/predict relative">
+              <Info size={12} className="text-text-muted cursor-help hover:text-accent-gold transition-colors" />
+              <div className="absolute right-0 top-full mt-2 w-56 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/predict:opacity-100 group-hover/predict:visible transition-all z-50 pointer-events-none">
+                <p className="text-[9px] text-text-primary leading-relaxed font-medium">
+                  Uses historical average net balance to forecast your likely liquidity position for the next interval.
+                </p>
+              </div>
+            </div>
            </div>
            {forecast ? (
              <div className="space-y-4">
@@ -255,6 +293,14 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
             <div className="flex items-center gap-2">
               <AlertTriangle size={16} className="text-expense" />
               <h3 className="text-sm font-bold text-text-primary">Anomalies Detected</h3>
+              <div className="group/anomaly relative">
+                <Info size={12} className="text-text-muted cursor-help hover:text-accent-gold transition-colors" />
+                <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/anomaly:opacity-100 group-hover/anomaly:visible transition-all z-50 pointer-events-none">
+                  <p className="text-[9px] text-text-primary leading-relaxed font-medium">
+                    Identifies specific transactions that are <span className="text-expense font-bold">50% higher</span> than the historical average for that category.
+                  </p>
+                </div>
+              </div>
             </div>
             <span className="bg-expense/10 text-expense text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">{anomalies.length} Alerts</span>
           </div>
@@ -279,10 +325,23 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           {insights.map((ins, i) => (
-            <div key={i} className="bg-surface border border-border-main p-3 rounded-2xl flex flex-col justify-between hover:border-border-hover transition-colors group">
-              <div className="flex items-center gap-2 text-text-muted mb-2 group-hover:text-accent-gold transition-colors">
-                {ins.icon}
-                <span className="text-[8px] font-bold uppercase tracking-widest">{ins.label}</span>
+            <div key={i} className="bg-surface border border-border-main p-3 rounded-2xl flex flex-col justify-between hover:border-border-hover transition-colors group relative">
+              <div className="flex items-center justify-between text-text-muted mb-2 group-hover:text-accent-gold transition-colors">
+                <div className="flex items-center gap-2">
+                  {ins.icon}
+                  <span className="text-[8px] font-bold uppercase tracking-widest">{ins.label}</span>
+                </div>
+                <div className="group/stat-info relative">
+                  <Info size={10} className="cursor-help opacity-50 hover:opacity-100" />
+                  <div className="absolute right-0 bottom-full mb-2 w-48 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/stat-info:opacity-100 group-hover/stat-info:visible transition-all z-50 pointer-events-none">
+                    <p className="text-[9px] text-text-primary leading-tight lowercase">
+                      {ins.label === 'Fiscal Health' ? 'Weighted disciplinary score' :
+                       ins.label === 'Predictive Net' ? 'Forecasted balance variance' :
+                       ins.label === 'Burn Velocity' ? 'Daily average liquidation rate' :
+                       'Tracking consistency index'}
+                    </p>
+                  </div>
+                </div>
               </div>
               <div>
                 <div className="text-xs font-bold text-text-primary font-mono">{ins.value}</div>
@@ -297,9 +356,19 @@ export const AnalysisPanels: React.FC<AnalysisPanelsProps> = ({ transactions, bo
       {borrowLedger.length > 0 && (
         <div className="lg:col-span-3 dashboard-card">
           <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-sm font-bold text-text-primary mb-0.5">Borrow Ledger</h3>
-              <p className="text-[11px] text-text-muted">Active relations and outstanding balances</p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-text-primary mb-0.5">Borrow Ledger</h3>
+                <p className="text-[11px] text-text-muted">Active relations and outstanding balances</p>
+              </div>
+              <div className="group/borrow-info relative">
+                <Info size={14} className="text-text-muted cursor-help hover:text-accent-gold transition-colors" />
+                <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/borrow-info:opacity-100 group-hover/borrow-info:visible transition-all z-50 pointer-events-none">
+                  <p className="text-[9px] text-text-primary leading-relaxed font-medium">
+                    A net-position summary calculated by subtracting total repayments from total borrowed amounts per person.
+                  </p>
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-income" />

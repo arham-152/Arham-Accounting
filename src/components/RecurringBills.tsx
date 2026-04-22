@@ -1,7 +1,7 @@
 import React from 'react';
 import { Transaction } from '../types';
 import { formatPKR, cn, copyToClipboard } from '../lib/utils';
-import { RefreshCw, Calendar, AlertCircle, ChevronRight, Zap } from 'lucide-react';
+import { RefreshCw, Calendar, AlertCircle, ChevronRight, Zap, Info } from 'lucide-react';
 import { format, addMonths, parseISO, isBefore, isAfter } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -11,6 +11,8 @@ interface RecurringBillsProps {
 
 export const RecurringBills: React.FC<RecurringBillsProps> = ({ transactions }) => {
   const [copiedId, setCopiedId] = React.useState<number | null>(null);
+  const [filter, setFilter] = React.useState<'all' | 'upcoming'>('upcoming');
+
   // Logic to detect recurring transactions (same amount, similar name, across different months)
   const recurring = React.useMemo(() => {
     const expenses = transactions.filter(t => t.type === 'CREDIT' && !['BORROW', 'TRANSFER'].includes(t.category));
@@ -45,29 +47,72 @@ export const RecurringBills: React.FC<RecurringBillsProps> = ({ transactions }) 
       .sort((a, b) => parseISO(a.nextDate).getTime() - parseISO(b.nextDate).getTime());
   }, [transactions]);
 
+  const filteredRecurring = React.useMemo(() => {
+    if (filter === 'all') return recurring;
+    return recurring.filter(r => r.isUpcoming);
+  }, [recurring, filter]);
+
   const totalMonthlyBurn = recurring.reduce((sum, r) => sum + r.amount, 0);
 
   return (
     <div className="dashboard-card flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-sm font-bold text-text-primary mb-0.5">Recurring Subscriptions</h3>
-          <p className="text-[11px] text-text-muted">Managed active commitments and fixed costs</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex items-center gap-2 group/info relative">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-text-primary mb-0.5">Recurring Subscriptions</h3>
+              <div className="cursor-help text-text-muted hover:text-accent-gold transition-colors">
+                <Info size={14} />
+              </div>
+            </div>
+            <p className="text-[11px] text-text-muted">Managed active commitments and fixed costs</p>
+          </div>
+          
+          {/* Info Tooltip */}
+          <div className="absolute left-0 top-full mt-2 w-72 p-4 bg-surface-brightest border border-border-main rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 pointer-events-none">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap size={14} className="text-accent-gold" />
+              <span className="text-[10px] uppercase font-black text-accent-gold tracking-widest">AI Calculation Logic</span>
+            </div>
+            <p className="text-[11px] text-text-primary leading-relaxed">
+              The <span className="text-expense font-bold">Monthly Burn</span> is the sum of unique transactions that occur at least twice in different months with the same name and amount. 
+              <br /><br />
+              <span className="text-accent-gold font-bold italic">Formula:</span> Σ (Latest amount of each detected pattern)
+            </p>
+          </div>
         </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-expense font-mono">{formatPKR(totalMonthlyBurn)}</div>
-          <div className="text-[9px] text-text-muted uppercase tracking-widest">Monthly Committed Burn</div>
+        
+        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex bg-surface rounded-lg p-1 border border-border-main shrink-0">
+            {['upcoming', 'all'].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f as any)}
+                className={cn(
+                  "px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition-all",
+                  filter === f ? "bg-accent-gold text-black shadow-lg" : "text-text-muted hover:text-text-primary"
+                )}
+              >
+                {f === 'upcoming' ? 'Upcoming' : 'All'}
+              </button>
+            ))}
+          </div>
+          
+          <div className="text-right">
+            <div className="text-lg font-bold text-expense font-mono line-height-1 leading-none">{formatPKR(totalMonthlyBurn)}</div>
+            <div className="text-[9px] text-text-muted uppercase tracking-widest">monthly burn</div>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-4 flex-1">
-        {recurring.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-4 text-center text-text-muted opacity-40">
-            <RefreshCw size={18} className="mb-1" />
-            <p className="text-[10px]">No recurring patterns detected yet.</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
+        {filteredRecurring.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center p-8 text-center text-text-muted opacity-40 bg-surface-brighter border border-dashed border-border-main rounded-2xl">
+            <RefreshCw size={24} className="mb-2 animate-spin-slow" />
+            <p className="text-[11px]">No {filter} subscriptions found. AI patterns arrive as you record more data.</p>
           </div>
         ) : (
-          recurring.map((bill, i) => (
+          filteredRecurring.map((bill, i) => (
             <div key={i} className="flex items-center justify-between p-3 bg-surface-brighter border border-border-main rounded-2xl hover:border-border-hover transition-all group relative overflow-hidden">
               <AnimatePresence>
                 {copiedId === i && (

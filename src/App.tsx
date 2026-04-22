@@ -31,7 +31,7 @@ export default function App() {
   const [lastUpdated, setLastUpdated] = useState<string>('—');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [chartTab, setChartTab] = useState<'overview' | 'category' | 'month'>('overview');
+  const [chartTab, setChartTab] = useState<'overview' | 'budget' | 'category' | 'month'>('overview');
   const [currentView, setCurrentView] = useState<'dashboard' | 'register'>('dashboard');
   const [csvUrl, setCsvUrl] = useState(() => localStorage.getItem('account2026_csv_url') || '');
   const [dataSource, setDataSource] = useState<'live' | 'file'>(() => localStorage.getItem('account2026_csv_url') ? 'live' : 'file');
@@ -535,6 +535,12 @@ export default function App() {
                     Overview
                   </button>
                   <button 
+                    onClick={() => setChartTab('budget')}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'budget' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
+                  >
+                    Budget Tracking
+                  </button>
+                  <button 
                     onClick={() => setChartTab('category')}
                     className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'category' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
                   >
@@ -556,11 +562,15 @@ export default function App() {
                   <span>Custom Report</span>
                 </button>
               </div>
-              <Charts transactions={filteredData} allTransactions={allData} budgets={budgets} activeTab={chartTab} isDarkMode={isDarkMode} />
+              {chartTab !== 'budget' ? (
+                <Charts transactions={filteredData} allTransactions={allData} budgets={budgets} activeTab={chartTab as any} isDarkMode={isDarkMode} />
+              ) : null}
             </section>
 
-            {/* Budget Section */}
-            <section>
+            {chartTab === 'budget' && (
+              <div className="flex flex-col gap-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {/* Budget Section */}
+                <section>
               <div className="flex items-center gap-3 mb-6">
                 <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Budget Tracking</h2>
                 <div className="flex-1 h-px bg-border-main" />
@@ -619,6 +629,8 @@ export default function App() {
             </div>
           </div>
         )}
+      </div>
+    )}
 
         {currentView === 'register' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 min-h-[calc(100vh-250px)]">

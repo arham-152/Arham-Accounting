@@ -17,6 +17,7 @@ import { Line, Doughnut, Bar, Radar, PolarArea } from 'react-chartjs-2';
 import { Transaction, EXPENSE_CATEGORIES, CATEGORY_COLORS, MONTH_NAMES } from '../types';
 import { formatPKR, getPercentage } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { Info, Zap } from 'lucide-react';
 
 // Register ChartJS modules
 ChartJS.register(
@@ -24,15 +25,41 @@ ChartJS.register(
   ArcElement, RadialLinearScale, Filler, Title, Tooltip, Legend
 );
 
-const ChartCard: React.FC<{ title: string; sub: string; children: React.ReactNode; height?: number; delay?: number }> = ({ title, sub, children, height = 290, delay = 0 }) => (
+const ChartCard: React.FC<{ 
+  title: string; 
+  sub: string; 
+  children: React.ReactNode; 
+  height?: number; 
+  delay?: number;
+  logicInfo?: string;
+}> = ({ title, sub, children, height = 290, delay = 0, logicInfo }) => (
   <motion.div 
     initial={{ opacity: 0, y: 30 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ duration: 0.6, delay, ease: [0.23, 1, 0.32, 1] }}
-    className="dashboard-card p-4 sm:p-5"
+    className="dashboard-card p-4 sm:p-5 group/card"
   >
-    <h3 className="text-xs sm:text-sm font-bold mb-0.5">{title}</h3>
+    <div className="flex justify-between items-start mb-0.5">
+      <h3 className="text-xs sm:text-sm font-bold">{title}</h3>
+      {logicInfo && (
+        <div className="relative group/logic">
+          <div className="cursor-help text-text-muted hover:text-accent-gold transition-colors">
+            <Info size={14} />
+          </div>
+          {/* Chart Logic Tooltip */}
+          <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/logic:opacity-100 group-hover/logic:visible transition-all z-50 pointer-events-none">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap size={12} className="text-accent-gold" />
+              <span className="text-[9px] uppercase font-black text-accent-gold tracking-widest leading-none">Logic Info</span>
+            </div>
+            <p className="text-[10px] text-text-primary leading-relaxed font-medium">
+              {logicInfo}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
     <p className="text-[10px] sm:text-[11px] text-text-muted mb-6">{sub}</p>
     <div className="relative h-[240px] sm:h-[280px]" style={height ? { height: `calc(${height}px * 0.85)` } : undefined}>
       {children}
@@ -372,11 +399,21 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
 
   const renderOverview = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 pb-6">
-      <ChartCard title="Overall Flow" sub="Income vs Expense vs Borrow comparison" delay={0.1}>
+      <ChartCard 
+        title="Overall Flow" 
+        sub="Income vs Expense vs Borrow comparison" 
+        delay={0.1}
+        logicInfo="Aggregates Monthly Income (DEBIT), Monthly Expenses (CREDIT excluding Borrow), and Monthly Borrowings. It provides a macro view of capital movement."
+      >
         <Bar data={compData} options={themeOptions} />
       </ChartCard>
 
-      <ChartCard title="Benchmark Analysis" sub="Current vs 3-Month Historical Average" delay={0.15}>
+      <ChartCard 
+        title="Benchmark Analysis" 
+        sub="Current vs 3-Month Historical Average" 
+        delay={0.15}
+        logicInfo="Calculates the average spending of the previous 3 full months per category and compares it against the latest month in your ledger to identify over-spending."
+      >
         <Bar data={benchmarkData} options={{
           ...themeOptions,
           scales: {
@@ -389,7 +426,12 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         }} />
       </ChartCard>
 
-      <ChartCard title="Cumulative Spend" sub="Running total of all expenses" delay={0.2}>
+      <ChartCard 
+        title="Cumulative Spend" 
+        sub="Running total of all expenses" 
+        delay={0.2}
+        logicInfo="A continuous running sum of every single expense recorded, sorted by date. It shows the total amount of money that has left your accounts since day one."
+      >
         <Line data={cumulativeData as any} options={{
           ...themeOptions,
           scales: {
@@ -408,7 +450,13 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         }} />
       </ChartCard>
 
-      <ChartCard title="Category Intensity" sub="Spend focal points" delay={0.3} height={300}>
+      <ChartCard 
+        title="Category Intensity" 
+        sub="Spend focal points" 
+        delay={0.3} 
+        height={300}
+        logicInfo="Plots lifetime category totals. The larger the area, the more dominant that category is in your spending habits."
+      >
         <Radar data={radarData} options={{
           ...themeOptions,
           plugins: {
@@ -421,7 +469,12 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         }} />
       </ChartCard>
 
-      <ChartCard title="Growth Highlights" sub="Financial trajectory" delay={0.4}>
+      <ChartCard 
+        title="Growth Highlights" 
+        sub="Financial trajectory" 
+        delay={0.4}
+        logicInfo="Compares Monthly Net Savings (Income vs Expense) over time to track your wealth trajectory."
+      >
         <Line data={revenueTrendData} options={{
           ...themeOptions,
           scales: {
@@ -432,11 +485,21 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         }} />
       </ChartCard>
 
-      <ChartCard title="Spending Trend" sub="Category tracking" delay={0.5}>
+      <ChartCard 
+        title="Spending Trend" 
+        sub="Category tracking" 
+        delay={0.5}
+        logicInfo="Splits expense data by category per month. Useful for seeing which specific costs are rising or falling."
+      >
         <Line data={lineData} options={themeOptions} />
       </ChartCard>
       
-      <ChartCard title="Category Allocation" sub="Spending breakdown" delay={0.6}>
+      <ChartCard 
+        title="Category Allocation" 
+        sub="Spending breakdown" 
+        delay={0.6}
+        logicInfo="Shows the percentage share of each category within your total lifetime spending."
+      >
         <Doughnut 
           data={donutData} 
           options={{
@@ -463,11 +526,21 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         />
       </ChartCard>
 
-      <ChartCard title="Stacked Composition" sub="Layering per month" delay={0.7}>
+      <ChartCard 
+        title="Stacked Composition" 
+        sub="Layering per month" 
+        delay={0.7}
+        logicInfo="Visualizes how different categories stack up in your monthly budget totals."
+      >
         <Bar data={stackedData} options={themeOptions} />
       </ChartCard>
 
-      <ChartCard title="Channel Distribution" sub="Payment volumes" delay={0.8}>
+      <ChartCard 
+        title="Channel Distribution" 
+        sub="Payment volumes" 
+        delay={0.8}
+        logicInfo="Breaks down total inflows and outflows specifically by account/medium (CASH vs Jazz-Cash)."
+      >
         <PolarArea 
           data={{
             labels: ['Cash Exp', 'Jazz Exp', 'Cash Inc', 'Jazz Inc'],
@@ -515,7 +588,12 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       <div className="flex flex-col gap-8 pb-6">
         {borrowEntries.length > 0 && (
           <div className="col-span-full">
-            <ChartCard title="BORROW LEDGER SNAPSHOT" sub="Person-wise net position (Green = You get, Red = You owe)" height={320}>
+            <ChartCard 
+              title="BORROW LEDGER SNAPSHOT" 
+              sub="Person-wise net position (Green = You get, Red = You owe)" 
+              height={320}
+              logicInfo="Calculates balance per person by adding DEBITS (what they owe you / inflow) and subtracting CREDITS (what you owe them / outflow). Shows the top 15 active relationships."
+            >
               <Bar 
                 data={{
                   labels: borrowEntries.map(e => e[0]),
