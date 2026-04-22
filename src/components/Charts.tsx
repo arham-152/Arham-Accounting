@@ -498,31 +498,74 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
     </div>
   );
 
-  const renderCategoryTrends = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
-      {categories.map(cat => {
-        const data = {
-          labels: timeline.map(t => t.label),
-          datasets: [{
-            label: cat,
-            data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.category === cat && r.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)),
-            backgroundColor: (CATEGORY_COLORS[cat] || '#6b7280') + 'bb',
-            borderColor: CATEGORY_COLORS[cat] || '#6b7280',
-            borderWidth: 1,
-            borderRadius: 2
-          }]
-        };
-        return (
-          <ChartCard key={cat} title={cat} sub={`Monthly trend for ${cat.toLowerCase()} expenses`} height={200}>
-            <Bar data={data} options={{
-              ...themeOptions,
-              plugins: { ...themeOptions.plugins, legend: { display: false } }
-            }} />
-          </ChartCard>
-        );
-      })}
-    </div>
-  );
+  const renderCategoryTrends = () => {
+    const borrowTxns = allTransactions.filter(t => t.category === 'BORROW');
+    const personBalances: Record<string, number> = {};
+    borrowTxns.forEach(t => {
+      const v = t.type === 'DEBIT' ? t.amount : -t.amount;
+      personBalances[t.name] = (personBalances[t.name] || 0) + v;
+    });
+
+    const borrowEntries = Object.entries(personBalances)
+      .filter(([_, balance]) => Math.abs(balance) > 0)
+      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+      .slice(0, 15);
+
+    return (
+      <div className="flex flex-col gap-8 pb-6">
+        {borrowEntries.length > 0 && (
+          <div className="col-span-full">
+            <ChartCard title="BORROW LEDGER SNAPSHOT" sub="Person-wise net position (Green = You get, Red = You owe)" height={320}>
+              <Bar 
+                data={{
+                  labels: borrowEntries.map(e => e[0]),
+                  datasets: [{
+                    label: 'Balance',
+                    data: borrowEntries.map(e => e[1]),
+                    backgroundColor: borrowEntries.map(e => e[1] > 0 ? '#10b98188' : '#ef444488'),
+                    borderColor: borrowEntries.map(e => e[1] > 0 ? '#10b981' : '#ef4444'),
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                  }]
+                }} 
+                options={{
+                  ...commonOptions,
+                  indexAxis: 'y' as const,
+                  plugins: {
+                    ...commonOptions.plugins,
+                    legend: { display: false }
+                  }
+                }} 
+              />
+            </ChartCard>
+          </div>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {categories.map(cat => {
+            const data = {
+              labels: timeline.map(t => t.label),
+              datasets: [{
+                label: cat,
+                data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.category === cat && r.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)),
+                backgroundColor: (CATEGORY_COLORS[cat] || '#6b7280') + 'bb',
+                borderColor: CATEGORY_COLORS[cat] || '#6b7280',
+                borderWidth: 1,
+                borderRadius: 2
+              }]
+            };
+            return (
+              <ChartCard key={cat} title={cat} sub={`Monthly trend for ${cat.toLowerCase()} expenses`} height={200}>
+                <Bar data={data} options={{
+                  ...themeOptions,
+                  plugins: { ...themeOptions.plugins, legend: { display: false } }
+                }} />
+              </ChartCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   const renderMonthlyBreakdown = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">

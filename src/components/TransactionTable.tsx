@@ -140,6 +140,38 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [activeNoteSr, setActiveNoteSr] = useState<number | null>(null);
 
+  const [copySuccessSr, setCopySuccessSr] = useState<number | null>(null);
+
+  const handleCopyHistory = (entityName: string, sr: number) => {
+    // Filter transactions correctly for the entity in the current ledger category
+    const history = transactions
+      .filter(t => t.category === ledgerModeCategory && t.name === entityName)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
+    if (history.length === 0) return;
+
+    let balance = 0;
+    const historyString = history.map(t => {
+      // User requested DEBIT as PLUS (+) and CREDIT as MINUS (-) if referring to his balance
+      // But in his spreadsheet: DEBIT is inflow (+), CREDIT is outflow (-)
+      // If I give money to someone (Borrow category), it's outflow (CREDIT).
+      // If I receive back, it's inflow (DEBIT).
+      // Based on user prompt: "DEBIT amount showing with PLUS & CREDIT (+) amount with MINUS (-)"
+      const prefix = t.type === 'DEBIT' ? '+' : '-';
+      const amt = t.amount;
+      balance += (t.type === 'DEBIT' ? amt : -amt);
+      return `${t.date}: ${prefix}${amt.toLocaleString()} [${t.notes || 'No notes'}]`;
+    }).join('\n');
+
+    const header = `COMPLETE HISTORY - ${entityName} (${ledgerModeCategory})\n================================\n`;
+    const footer = `\n================================\nNET POSITION: Rs ${balance.toLocaleString()} ${balance >= 0 ? '(GETS)' : '(OWES)'}`;
+    
+    navigator.clipboard.writeText(header + historyString + footer).then(() => {
+      setCopySuccessSr(sr);
+      setTimeout(() => setCopySuccessSr(null), 2000);
+    });
+  };
+
   const uniqueCategories = useMemo(() => {
     return Array.from(new Set(transactions.map(t => t.category))).sort();
   }, [transactions]);
@@ -501,7 +533,27 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-12">
             {ledgerSummary.map((item) => (
-              <div key={item.name} className="dashboard-card group hover:border-accent-gold/40 transition-all cursor-pointer">
+              <div 
+                key={item.name} 
+                className={cn(
+                  "dashboard-card group hover:border-accent-gold/40 transition-all relative",
+                  activeNoteSr === item.recentSr ? "z-[60]" : "z-10 hover:z-20"
+                )}
+              >
+                {/* Copy Feedback Overlay - uses internal rounding to allow overflow of notes */}
+                <AnimatePresence>
+                  {copySuccessSr === item.recentSr && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute inset-0 bg-accent-gold/90 flex items-center justify-center z-30 rounded-[inherit]"
+                    >
+                      <span className="text-black font-black text-xs uppercase tracking-widest">History Copied!</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div className="flex justify-between items-center h-full">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
@@ -513,31 +565,38 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                          }}
                        >
                           <span className={cn(
-                            "text-[10px] text-text-muted transition-colors cursor-help border-b border-dotted border-text-muted/30",
+                            "text-[10px] text-text-muted transition-colors cursor-help border-b border-dotted border-text-muted/30 hover:text-accent-gold hover:border-accent-gold",
                             activeNoteSr === item.recentSr ? "text-accent-gold border-accent-gold" : ""
                           )}>
                             ({item.recentSr}#)
                           </span>
                           {/* Hover/Touch Pop-up for Notes */}
                           <div className={cn(
-                            "absolute bottom-full left-0 mb-2 w-56 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl transition-all z-20 pointer-events-none",
+                            "absolute bottom-full left-0 mb-3 w-64 p-4 bg-surface-brightest border border-border-main rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all z-[70] pointer-events-none",
                             (activeNoteSr === item.recentSr) 
                               ? "opacity-100 visible translate-y-0" 
                               : "opacity-0 invisible translate-y-1 sm:group-hover/sr:opacity-100 sm:group-hover/sr:visible sm:group-hover/sr:translate-y-0"
                           )}>
-                             <div className="flex items-center justify-between mb-2">
-                               <span className="text-[8px] uppercase font-bold text-accent-gold tracking-[2px]">Last Transaction Notes</span>
-                               <span className="text-[8px] font-mono text-text-muted">SR: {item.recentSr}</span>
+                             <div className="flex items-center justify-between mb-3">
+                               <span className="text-[10px] uppercase font-bold text-accent-gold tracking-[2px]">Last Transaction Notes</span>
+                               <span className="text-[9px] font-mono text-text-muted bg-surface p-1 rounded border border-border-main">SR: {item.recentSr}</span>
                              </div>
-                             <p className="text-[11px] text-text-primary italic leading-relaxed">
+                             <p className="text-[12px] text-text-primary italic leading-relaxed font-medium">
                                {item.recentNotes || "No notes available for this entry."}
                              </p>
-                             <div className="mt-2 pt-2 border-t border-border-main/50 flex justify-end">
-                                <span className="text-[8px] text-text-muted uppercase">Tap to close</span>
+                             <div className="mt-3 pt-3 border-t border-border-main/50 flex justify-between items-center">
+                                <span className="text-[8px] text-text-muted uppercase font-bold">Quick View</span>
+                                <span className="text-[8px] text-accent-gold/70 uppercase tracking-tighter">Tap serial again to close</span>
                              </div>
                           </div>
                        </div>
-                       <span className="font-bold text-sm tracking-tight group-hover:text-accent-gold transition-colors truncate max-w-[120px] sm:max-w-none">{item.name}</span>
+                       <span 
+                         onClick={() => handleCopyHistory(item.name, item.recentSr)}
+                         className="font-bold text-sm tracking-tight hover:text-accent-gold transition-colors cursor-pointer underline decoration-accent-gold/20 underline-offset-4 decoration-dotted truncate max-w-[120px] sm:max-w-none"
+                         title="Click to copy full history"
+                       >
+                         {item.name}
+                       </span>
                     </div>
                     <span className="text-[10px] text-text-muted font-mono">
                       {ledgerModeCategory === 'BORROW' ? 'Activity' : 'Volume'}: <span className="text-text-secondary">₨ {item.totalActivity.toLocaleString()}</span>
