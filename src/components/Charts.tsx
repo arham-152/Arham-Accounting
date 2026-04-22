@@ -14,6 +14,16 @@ import {
   Filler
 } from 'chart.js';
 import { Line, Doughnut, Bar, Radar, PolarArea } from 'react-chartjs-2';
+import { 
+  BarChart as ReBarChart, 
+  Bar as ReBar, 
+  XAxis as ReXAxis, 
+  YAxis as ReYAxis, 
+  CartesianGrid as ReGrid, 
+  Tooltip as ReTooltip, 
+  Legend as ReLegend, 
+  ResponsiveContainer 
+} from 'recharts';
 import { Transaction, EXPENSE_CATEGORIES, CATEGORY_COLORS, MONTH_NAMES } from '../types';
 import { formatPKR, getPercentage } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -397,6 +407,16 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
     };
   }, [allTransactions, transactions]);
 
+  const yearlySummary = useMemo(() => {
+    const years = [...new Set(allTransactions.map(t => t.year))].sort();
+    return years.map(year => {
+      const yearTxns = allTransactions.filter(t => t.year === year);
+      const income = yearTxns.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
+      const expense = yearTxns.filter(t => t.type === 'CREDIT' && t.category !== 'BORROW').reduce((s, t) => s + t.amount, 0);
+      return { year, income, expense };
+    });
+  }, [allTransactions]);
+
   const renderOverview = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 pb-6">
       <ChartCard 
@@ -568,6 +588,52 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
           }}
         />
       </ChartCard>
+
+      <ChartCard 
+        title="Yearly Fiscal Comparison" 
+        sub="Income vs Expense volume" 
+        delay={0.9}
+        logicInfo="Aggregates total Volume of Income (DEBIT) and Expenses (CREDIT) for each calendar year. Stacked bars show the total economic scale per year."
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <ReBarChart data={yearlySummary} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <ReGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+            <ReXAxis 
+              dataKey="year" 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: textColor, fontSize: 10 }}
+            />
+            <ReYAxis 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: textColor, fontSize: 10 }}
+              tickFormatter={(v) => v >= 1000 ? `₨${(v/1000).toFixed(0)}k` : `₨${v}`}
+            />
+            <ReTooltip 
+              contentStyle={{ 
+                backgroundColor: tooltipBg, 
+                borderColor: tooltipBorder, 
+                borderRadius: '12px',
+                fontSize: '11px',
+                color: textColor 
+              }}
+              itemStyle={{ fontSize: '11px', padding: '2px 0' }}
+              formatter={(value: number) => [formatPKR(value), '']}
+              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+            />
+            <ReLegend 
+              verticalAlign="top" 
+              align="right" 
+              iconType="circle" 
+              iconSize={8}
+              wrapperStyle={{ fontSize: '10px', paddingBottom: '10px' }}
+            />
+            <ReBar dataKey="income" name="Income" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
+            <ReBar dataKey="expense" name="Expense" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
+          </ReBarChart>
+        </ResponsiveContainer>
+      </ChartCard>
     </div>
   );
 
@@ -662,7 +728,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
           }]
         };
         return (
-          <ChartCard key={t.key} title={t.label.toUpperCase()} sub={`Category-wise breakdown for ${t.label}`} height={240}>
+          <ChartCard key={t.key} title={t.key.toUpperCase()} sub={`Category-wise breakdown for ${t.key}`} height={240}>
             <Bar data={data} options={{
               ...themeOptions,
               plugins: { ...themeOptions.plugins, legend: { display: false } }
