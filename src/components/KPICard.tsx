@@ -14,11 +14,15 @@ interface KPICardProps {
 }
 
 export const KPICard: React.FC<KPICardProps> = ({ label, value, subText, icon, colorClass, delay = 0, hideAmount = false }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, scale: 1.01 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       transition={{ 
         duration: 0.5, 
         delay,
@@ -26,7 +30,7 @@ export const KPICard: React.FC<KPICardProps> = ({ label, value, subText, icon, c
         stiffness: 260,
         damping: 20 
       }}
-      className="dashboard-card relative overflow-hidden flex flex-col h-[170px] group"
+      className="dashboard-card relative overflow-hidden flex flex-col h-[170px] group cursor-default"
     >
       {/* Premium Glow Effect */}
       <div className={cn(
@@ -42,7 +46,7 @@ export const KPICard: React.FC<KPICardProps> = ({ label, value, subText, icon, c
       </div>
       
       <div className={cn("relative z-10 font-mono text-xl sm:text-2xl font-semibold mb-1 truncate", colorClass.replace('bg-', 'text-'))}>
-        {hideAmount ? (
+        {(hideAmount && !isHovered) ? (
           <span className="tracking-widest">••••••</span>
         ) : (
           <AnimatedNumber value={value} prefix="₨ " />

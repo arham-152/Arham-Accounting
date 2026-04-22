@@ -119,7 +119,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({ filters, categories, set
           name="search"
           value={filters.search}
           onChange={handleChange}
-          placeholder="Name or notes..."
+          placeholder="Name, notes or ID..."
           className="bg-surface-brighter border border-border-main text-text-primary text-xs px-3 py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors"
         />
       </div>

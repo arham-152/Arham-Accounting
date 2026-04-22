@@ -61,11 +61,15 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
     const spent = transactions
       .filter(t => t.category === cat && t.type === 'CREDIT')
       .reduce((sum, t) => sum + t.amount, 0);
-    const limit = budgets[cat] || 0;
+    const manualLimit = budgets[cat] || 0;
+    const fallbackLimit = averages[cat] || 0;
+    const limit = manualLimit > 0 ? manualLimit : fallbackLimit;
+    const isFallback = manualLimit === 0 && fallbackLimit > 0;
+    
     const remaining = limit - spent;
     const percent = limit > 0 ? (spent / limit) * 100 : 0;
     
-    return { cat, spent, limit, remaining, percent };
+    return { cat, spent, limit, remaining, percent, isFallback };
   });
 
   return (
@@ -103,13 +107,14 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({ transactions, allT
         </div>
 
         <div className="space-y-6">
-          {categorySpending.map(({ cat, spent, limit, remaining, percent }) => (
+          {categorySpending.map(({ cat, spent, limit, remaining, percent, isFallback }) => (
             <div key={cat} className="space-y-2">
               <div className="flex justify-between items-end">
                 <div className="flex flex-col">
                   <span className="text-xs font-bold text-text-primary">{cat}</span>
                   <span className="text-[10px] text-text-muted">
                     Spent {formatPKR(spent)} of {limit > 0 ? formatPKR(limit) : 'No Budget'}
+                    {isFallback && <span className="ml-1 text-[8px] font-bold text-accent-gold/60 uppercase tracking-tighter">(3-mo avg)</span>}
                   </span>
                 </div>
                 <div className="text-right">

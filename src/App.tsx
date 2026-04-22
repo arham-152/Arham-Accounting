@@ -229,7 +229,7 @@ export default function App() {
         if (filters.channel === 'CASH' && r.from !== 'CASH') return false;
         if (filters.channel === 'Jazz-Cash' && r.from !== 'Jazz-Cash') return false;
       }
-      if (filters.search && !(r.name + r.notes + r.category).toLowerCase().includes(filters.search.toLowerCase())) return false;
+      if (filters.search && !(r.name + r.notes + r.category + r.sr).toLowerCase().includes(filters.search.toLowerCase())) return false;
       return true;
     });
   }, [allData, filters]);
@@ -521,7 +521,11 @@ export default function App() {
             <section>
               <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-3 mb-6">
                 <div className="flex items-center gap-3 shrink-0">
-                  <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Trend Analytics</h2>
+                  <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">
+                    {chartTab === 'overview' ? 'Trend Analytics' : 
+                     chartTab === 'budget' ? 'Budget Tracking' : 
+                     chartTab === 'category' ? 'Category Analysis' : 'Monthly Breakdown'}
+                  </h2>
                   <div className="flex-1 lg:hidden h-px bg-border-main" />
                 </div>
                 
@@ -571,15 +575,11 @@ export default function App() {
               <div className="flex flex-col gap-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* Budget Section */}
                 <section>
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Budget Tracking</h2>
-                <div className="flex-1 h-px bg-border-main" />
-              </div>
               <BudgetSection 
                 transactions={allData.filter(r => {
-                  if (filters.months.length > 0) return filters.months.includes(r.month);
-                  const currentMonth = MONTH_NAMES[new Date().getMonth()];
-                  return r.month === currentMonth;
+                  const targetYear = filters.year || String(new Date().getFullYear());
+                  const targetMonths = filters.months.length > 0 ? filters.months : [MONTH_NAMES[new Date().getMonth()]];
+                  return r.year === targetYear && targetMonths.includes(r.month);
                 })} 
                 allTransactions={allData}
                 budgets={budgets}
