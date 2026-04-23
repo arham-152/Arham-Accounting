@@ -58,7 +58,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-surface border border-border-hover w-full max-w-lg rounded-2xl p-6 sm:p-8 relative shadow-2xl z-10"
+            className="bg-surface border border-border-hover w-full max-w-lg rounded-2xl p-6 sm:p-8 relative shadow-2xl z-10 max-h-[90vh] overflow-y-auto custom-scrollbar"
           >
             <button onClick={onClose} className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors">
               <X size={20} />
@@ -138,24 +138,82 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
                 >
                   <div className="p-4 bg-surface-brightest rounded-xl border border-dashed border-accent-gold/30 text-[10px] text-text-secondary space-y-3">
                     <p className="font-bold text-accent-gold">How to Enable "Add Transaction":</p>
-                    <ol className="list-decimal list-inside space-y-1 ml-1">
-                      <li>Open your Spreadsheet → <b>Extensions</b> → <b>Apps Script</b></li>
-                      <li>Paste the code below into <code>Code.gs</code></li>
-                      <li>Click <b>Deploy</b> → <b>New Deployment</b> → Type: <b>Web App</b></li>
-                      <li>Who has access: <b>Anyone</b></li>
-                      <li>Copy the <b>Web App URL</b> and paste it above!</li>
+                    <p className="text-[9px] text-text-muted mb-1 bg-yellow-500/10 p-1 rounded border border-yellow-500/20">
+                      ⚠️ <strong>Crucial:</strong> Use a <strong>Computer Browser</strong>. Mobile apps do not show "Extensions".
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 ml-1 leading-relaxed">
+                      <li>Open your Sheet on a Desktop → <b>Extensions</b> → <b>Apps Script</b></li>
+                      <li>Delete all existing code and paste the code block below</li>
+                      <li>Click <b>Deploy</b> (top right) → <b>New Deployment</b></li>
+                      <li>Select Type: <b>Web App</b></li>
+                      <li>Execute as: <b>Me</b> | Who has access: <b>Anyone</b> (Essential!)</li>
+                      <li>Click <b>Deploy</b>, Authorize access, and copy the <b>Web App URL</b></li>
                     </ol>
-                    <div className="relative group">
-                       <pre className="p-3 bg-black/40 rounded-lg font-mono text-[9px] overflow-x-auto border border-border-main text-income select-all">
+                    <div className="relative group max-h-48 overflow-y-auto custom-scrollbar rounded-lg border border-border-main scrollbar-thin">
+                       <pre className="p-3 bg-black/40 font-mono text-[9px] text-income select-all leading-relaxed whitespace-pre">
 {`function doPost(e) {
-  const s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("DashBoard");
-  const d = JSON.parse(e.postData.contents);
-  const sr = s.getLastRow();
-  s.appendRow([sr, d.date, d.name, d.amount, d.category, d.type, d.from, d.to, d.notes]);
-  return ContentService.createTextOutput("OK");
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    // 1. Target the "Active" sheet exactly
+    const s = ss.getSheetByName("Active");
+    if (!s) throw new Error("Sheet 'Active' not found!"); 
+    
+    const d = JSON.parse(e.postData.contents);
+    const date = d.date || new Date().toISOString().split('T')[0];
+
+    // 2. Find the correct row by looking at Column B (Date column)
+    // We look for the first empty cell in Column B starting from row 5
+    const colB = s.getRange("B:B").getValues();
+    let targetRow = 5; // Rows 1-4 are headers/info in your screenshot
+    for (let i = 4; i < colB.length; i++) {
+       if (!colB[i][0]) {
+         targetRow = i + 1;
+         break;
+       }
+    }
+
+    // 3. Update the row with data (A=SR, B=Date, C=Name, etc.)
+    // We don't overwrite Column A if it already has an SR number
+    const range = s.getRange(targetRow, 2, 1, 8); // Start from Column B
+    range.setValues([[
+      date, 
+      d.name, 
+      d.amount, 
+      d.category, 
+      d.type, 
+      d.from, 
+      d.to, 
+      d.notes
+    ]]);
+    
+    return ContentService.createTextOutput("OK - Entry added to row " + targetRow)
+      .setMimeType(ContentService.MimeType.TEXT);
+  } catch (err) {
+    return ContentService.createTextOutput("Error: " + err.message)
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+}
+
+// TEST FUNCTION
+function testMe() {
+  const fakeEvent = {
+    postData: {
+      contents: JSON.stringify({
+        date: "2026-04-23",
+        name: "Test to Active",
+        amount: 500,
+        category: "FIXED",
+        type: "CREDIT",
+        from: "CASH",
+        to: "OTHER",
+        notes: "Verified Column B"
+      })
+    }
+  };
+  console.log(doPost(fakeEvent).getContent());
 }`}
                        </pre>
-                       <span className="absolute top-2 right-2 text-[8px] bg-accent-gold/20 text-accent-gold px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Select & Copy</span>
+                       <span className="absolute top-2 right-2 text-[8px] bg-accent-gold/20 text-accent-gold px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Select & Copy Code</span>
                     </div>
                   </div>
                 </motion.div>

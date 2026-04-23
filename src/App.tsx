@@ -45,6 +45,7 @@ export default function App() {
   });
   const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('account2026_privacy') === 'true');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
@@ -407,6 +408,8 @@ export default function App() {
     }
 
     try {
+      setError(null);
+      setSuccessMsg(null);
       const response = await fetch('/api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -417,17 +420,20 @@ export default function App() {
         })
       });
 
-      if (response.ok) {
+      const resultText = await response.text();
+
+      if (response.ok && (resultText.trim() === "OK" || resultText.includes("OK"))) {
+        setSuccessMsg("Entry saved successfully to spreadsheet!");
+        setTimeout(() => setSuccessMsg(null), 5000);
         // Re-sync after successful addition
-        setTimeout(() => syncFinancialData(csvUrl), 2000);
+        setTimeout(() => syncFinancialData(csvUrl), 3000);
         return true;
       } else {
-        const err = await response.json();
-        throw new Error(err.details || "Failed to add entry");
+        throw new Error(resultText || "Failed to confirm save. Check Apps Script.");
       }
     } catch (err: any) {
       console.error("Add failed:", err);
-      setError(`Record update failed: ${err.message}. Ensure your Script URL is published as 'Anyone' can access.`);
+      setError(`Record update failed: ${err.message}. Ensure your Script URL is published as 'Anyone'.`);
       return false;
     }
   };
@@ -478,6 +484,14 @@ export default function App() {
         accept=".csv"
         onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
       />
+
+      {successMsg && (
+        <div className="bg-income/10 border-b border-income/20 py-2 px-6 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-1">
+          <div className="w-2 h-2 rounded-full bg-income animate-pulse" />
+          <span className="text-[11px] font-bold text-income uppercase tracking-widest">{successMsg}</span>
+          <button onClick={() => setSuccessMsg(null)} className="text-[10px] text-text-muted hover:text-text-primary px-2">Dismiss</button>
+        </div>
+      )}
 
       {error && (
         <div className="bg-expense/10 border-b border-expense/20 py-2 px-6 flex items-center justify-center gap-3">

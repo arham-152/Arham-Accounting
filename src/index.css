@@ -74,6 +74,20 @@
   .kpi-border {
     @apply absolute top-0 left-0 right-0 h-[3px] rounded-t-dashboard;
   }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent-gold);
+  }
 }
 
 ::-webkit-scrollbar {
