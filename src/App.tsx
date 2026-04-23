@@ -13,6 +13,7 @@ import { SavingsGoals, SavingsGoal } from './components/SavingsGoals';
 import { RecurringBills } from './components/RecurringBills';
 import { ConnectModal } from './components/ConnectModal';
 import { ReportModal } from './components/ReportModal';
+import { AddTransactionModal } from './components/AddTransactionModal';
 import { generatePDFReport, generateExcelReport } from './services/reportService';
 import { suggestCategory, batchCategorize } from './services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
@@ -34,7 +35,9 @@ export default function App() {
   const [chartTab, setChartTab] = useState<'overview' | 'budget' | 'category' | 'month'>('overview');
   const [currentView, setCurrentView] = useState<'dashboard' | 'register'>('dashboard');
   const [csvUrl, setCsvUrl] = useState(() => localStorage.getItem('account2026_csv_url') || '');
+  const [syncUrl, setSyncUrl] = useState(() => localStorage.getItem('account2026_sync_url') || '');
   const [dataSource, setDataSource] = useState<'live' | 'file'>(() => localStorage.getItem('account2026_csv_url') ? 'live' : 'file');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('account2026_theme');
@@ -104,6 +107,12 @@ export default function App() {
       localStorage.setItem('account2026_csv_url', csvUrl);
     }
   }, [csvUrl]);
+
+  useEffect(() => {
+    if (syncUrl) {
+      localStorage.setItem('account2026_sync_url', syncUrl);
+    }
+  }, [syncUrl]);
 
   useEffect(() => {
     // If no data source and no URL, force connect modal for first time users
@@ -284,8 +293,13 @@ export default function App() {
     return { income, expense, net: income - expense, borrow, savings, totalCash, totalAccounts, borrowNet };
   }, [filteredData]);
 
-  const handleConnect = (url: string) => {
+  const handleConnect = (url: string, sUrl?: string) => {
     console.log(`[Connect] User provided URL: ${url}`);
+    if (sUrl) {
+      setSyncUrl(sUrl);
+      localStorage.setItem('account2026_sync_url', sUrl);
+    }
+
     let finalUrl = url;
     if (url.includes('docs.google.com')) {
       const { id, gid } = extractSheetInfo(url);
@@ -385,6 +399,39 @@ export default function App() {
     }
   };
 
+  const handleAddTransaction = async (data: any) => {
+    if (!syncUrl) {
+      setError("Please set up your 'Sync URL' in connections first to add transactions.");
+      setIsModalOpen(true);
+      return false;
+    }
+
+    try {
+      const response = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: syncUrl,
+          method: 'POST',
+          data: data
+        })
+      });
+
+      if (response.ok) {
+        // Re-sync after successful addition
+        setTimeout(() => syncFinancialData(csvUrl), 2000);
+        return true;
+      } else {
+        const err = await response.json();
+        throw new Error(err.details || "Failed to add entry");
+      }
+    } catch (err: any) {
+      console.error("Add failed:", err);
+      setError(`Record update failed: ${err.message}. Ensure your Script URL is published as 'Anyone' can access.`);
+      return false;
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-bg selection:bg-accent-gold/20 selection:text-accent-gold overflow-x-hidden">
       <header className="sticky top-0 z-50">
@@ -402,6 +449,7 @@ export default function App() {
           onViewChange={setCurrentView}
           onToggleFilters={() => setShowMobileFilters(!showMobileFilters)}
           showFilters={showMobileFilters}
+          onAddClick={() => setIsAddModalOpen(true)}
         />
 
         <AnimatePresence>
@@ -670,6 +718,13 @@ export default function App() {
         onClose={() => setIsModalOpen(false)}
         onConnect={handleConnect}
         onFileUpload={handleFileUpload}
+        currentSyncUrl={syncUrl}
+      />
+
+      <AddTransactionModal 
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddTransaction}
       />
 
       <ReportModal

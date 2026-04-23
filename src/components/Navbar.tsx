@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2, FileDown, Printer, Database, FileText, RefreshCw, Sun, Moon } from 'lucide-react';
+import { Share2, FileDown, Printer, Database, FileText, RefreshCw, Sun, Moon, PlusCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -17,6 +17,7 @@ interface NavbarProps {
   onViewChange: (view: 'dashboard' | 'register') => void;
   onToggleFilters: () => void;
   showFilters: boolean;
+  onAddClick: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
@@ -32,7 +33,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeView,
   onViewChange,
   onToggleFilters,
-  showFilters
+  showFilters,
+  onAddClick
 }) => {
   const isOnline = status === 'online';
 
@@ -40,8 +42,14 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav className="sticky top-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-border-main px-4 sm:px-6 pt-4 pb-3 sm:h-auto flex flex-col sm:flex-row items-center gap-4 sm:gap-6 shadow-sm">
       <div className="w-full sm:w-auto flex justify-between items-center sm:shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-accent-gold flex items-center justify-center text-black font-extrabold text-lg">A</div>
-          <div className="hidden sm:block">
+          <div className="h-10 flex items-center justify-center">
+            {isDarkMode ? (
+              <img src="/logo-dark.png" alt="Arham Ledger" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
+            ) : (
+              <img src="/logo-light.png" alt="Arham Ledger" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
+            )}
+          </div>
+          <div className="hidden sm:block border-l border-border-main pl-3 h-6 flex items-center">
             <span className="font-display font-extrabold text-lg tracking-tighter">Account <span className="text-accent-gold">2026</span></span>
           </div>
         </div>
@@ -123,6 +131,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
              <Share2 size={14} className={cn(showFilters ? "rotate-90" : "rotate-0", "transition-transform")} />
              Filters
+          </button>
+
+          <button 
+            onClick={onAddClick}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-accent-gold/30 bg-accent-gold/5 text-accent-gold text-[11px] font-bold transition-all hover:bg-accent-gold hover:text-black active:scale-95 shadow-sm shadow-accent-gold/5"
+          >
+            <PlusCircle size={14} />
+            <span className="hidden lg:inline">Quick Entry</span>
           </button>
 
           <button 

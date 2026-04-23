@@ -6,13 +6,16 @@ import { extractSheetInfo } from '../services/dataService';
 interface ConnectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConnect: (url: string) => void;
+  onConnect: (url: string, syncUrl?: string) => void;
   onFileUpload: (file: File) => void;
+  currentSyncUrl?: string;
 }
 
-export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onConnect, onFileUpload }) => {
+export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onConnect, onFileUpload, currentSyncUrl }) => {
   const [url, setUrl] = useState('');
+  const [syncUrl, setSyncUrl] = useState(currentSyncUrl || '');
   const [error, setError] = useState('');
+  const [showSyncSetup, setShowSyncSetup] = useState(false);
 
   const handleConnect = () => {
     if (!url.trim()) {
@@ -28,7 +31,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
     }
     
     setError('');
-    onConnect(url);
+    onConnect(url, syncUrl);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,21 +94,80 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
               </ul>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-2 mb-2">
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <input 
                 type="text" 
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Google Sheet URL..."
+                placeholder="Google Sheet CSV Export URL..."
                 className="flex-1 bg-surface-brighter border border-border-main text-text-primary text-sm px-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors font-mono min-w-0 placeholder:text-text-muted/50"
               />
-              <button 
-                onClick={handleConnect}
-                className="bg-accent-gold text-black w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-500 transition-all active:scale-95 whitespace-nowrap"
-              >
-                Connect
-              </button>
             </div>
+
+            <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2 flex justify-between items-center">
+               <span>Sync Settings (For Adding Transactions)</span>
+               <button 
+                 type="button" 
+                 onClick={() => setShowSyncSetup(!showSyncSetup)}
+                 className="text-accent-gold hover:underline decoration-dotted"
+               >
+                 {showSyncSetup ? 'Hide setup' : 'Show setup guide'}
+               </button>
+            </div>
+
+            <div className="flex flex-col gap-2 mb-2">
+              <input 
+                type="text" 
+                value={syncUrl}
+                onChange={(e) => setSyncUrl(e.target.value)}
+                placeholder="Google Apps Script Web App URL (Optional)..."
+                className="flex-1 bg-surface-brighter border border-border-main text-text-primary text-sm px-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors font-mono min-w-0 placeholder:text-text-muted/50"
+              />
+              <p className="text-[9px] text-text-muted italic mb-2">
+                Provide this URL to enable adding transactions directly from the dashboard.
+              </p>
+            </div>
+
+            <AnimatePresence>
+              {showSyncSetup && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden mb-6"
+                >
+                  <div className="p-4 bg-surface-brightest rounded-xl border border-dashed border-accent-gold/30 text-[10px] text-text-secondary space-y-3">
+                    <p className="font-bold text-accent-gold">How to Enable "Add Transaction":</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-1">
+                      <li>Open your Spreadsheet → <b>Extensions</b> → <b>Apps Script</b></li>
+                      <li>Paste the code below into <code>Code.gs</code></li>
+                      <li>Click <b>Deploy</b> → <b>New Deployment</b> → Type: <b>Web App</b></li>
+                      <li>Who has access: <b>Anyone</b></li>
+                      <li>Copy the <b>Web App URL</b> and paste it above!</li>
+                    </ol>
+                    <div className="relative group">
+                       <pre className="p-3 bg-black/40 rounded-lg font-mono text-[9px] overflow-x-auto border border-border-main text-income select-all">
+{`function doPost(e) {
+  const s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("DashBoard");
+  const d = JSON.parse(e.postData.contents);
+  const sr = s.getLastRow();
+  s.appendRow([sr, d.date, d.name, d.amount, d.category, d.type, d.from, d.to, d.notes]);
+  return ContentService.createTextOutput("OK");
+}`}
+                       </pre>
+                       <span className="absolute top-2 right-2 text-[8px] bg-accent-gold/20 text-accent-gold px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Select & Copy</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            <button 
+              onClick={handleConnect}
+              className="bg-accent-gold text-black w-full px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-yellow-500 transition-all active:scale-95 whitespace-nowrap mb-6 shadow-lg"
+            >
+              Update Connections
+            </button>
             
             {error && (
               <div className="flex items-center gap-2 text-expense text-[11px] font-bold mb-4 animate-in fade-in slide-in-from-top-1">

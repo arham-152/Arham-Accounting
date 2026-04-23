@@ -10,17 +10,28 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.use(express.json());
+
   // API Proxy to bypass CORS issues with Google Sheets
-  app.get('/api/proxy', async (req, res) => {
-    const targetUrl = req.query.url as string;
+  app.all('/api/proxy', async (req, res) => {
+    // For GET: use query.url. For POST: use body.url
+    const targetUrl = (req.method === 'GET' ? req.query.url : req.body.url) as string;
+    
     if (!targetUrl) {
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    console.log(`[Proxy] Fetching: ${targetUrl}`);
+    console.log(`[Proxy] ${req.method} to: ${targetUrl}`);
 
     try {
-      const response = await fetch(targetUrl);
+      const options: RequestInit = {
+        method: req.method === 'POST' ? 'POST' : 'GET',
+        headers: req.method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
+        body: req.method === 'POST' ? JSON.stringify(req.body.data || req.body) : undefined,
+        redirect: 'follow'
+      };
+
+      const response = await fetch(targetUrl, options);
       console.log(`[Proxy] Response: ${response.status} ${response.statusText}`);
       
       const responseData = await response.text();

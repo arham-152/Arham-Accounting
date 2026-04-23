@@ -3,10 +3,10 @@
   "name": "Account 2026 — Finance Dashboard",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png",
+      "src": "/logo-app.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "start_url": ".",
