@@ -108,40 +108,31 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Type Toggle */}
+              {/* Type Dropdown */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Entry Type</label>
-                <div className="flex bg-surface-brighter p-1 rounded-xl border border-border-main">
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, type: 'DEBIT' }))}
+                <div className="relative">
+                  <select
+                    value={formData.type}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        type: newType,
+                        category: newType === 'TRANSFER' ? 'TRANSFER' : prev.category
+                      }));
+                    }}
                     className={cn(
-                      "flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all",
-                      formData.type === 'DEBIT' ? "bg-income text-black shadow-lg" : "text-text-muted hover:text-text-primary"
+                      "w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none transition-all",
+                      formData.type === 'DEBIT' && "text-income border-income/30",
+                      formData.type === 'CREDIT' && "text-expense border-expense/30",
+                      formData.type === 'TRANSFER' && "text-accent-gold border-accent-gold/30"
                     )}
                   >
-                    INCOME
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, type: 'CREDIT' }))}
-                    className={cn(
-                      "flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all",
-                      formData.type === 'CREDIT' ? "bg-expense text-white shadow-lg" : "text-text-muted hover:text-text-primary"
-                    )}
-                  >
-                    EXPENSE
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, type: 'TRANSFER', category: 'TRANSFER' }))}
-                    className={cn(
-                      "flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all",
-                      formData.type === 'TRANSFER' ? "bg-accent-gold text-black shadow-lg" : "text-text-muted hover:text-text-primary"
-                    )}
-                  >
-                    TRANSFER
-                  </button>
+                    <option value="DEBIT">INCOME (DEBIT)</option>
+                    <option value="CREDIT">EXPENSE (CREDIT)</option>
+                    <option value="TRANSFER">TRANSFER</option>
+                  </select>
                 </div>
               </div>
 
