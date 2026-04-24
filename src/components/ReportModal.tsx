@@ -136,7 +136,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onGen
                     )}>
                       {value && <Download size={8} strokeWidth={4} />}
                     </div>
-                    {key.replace('show', '').replace(/([A-Z])/g, ' $1').trim() === 'From To' ? 'From | To' : key.replace('show', '').replace(/([A-Z])/g, ' $1').trim()}
+                    {(key as string).replace('show', '').replace(/([A-Z])/g, ' $1').trim() === 'From To' ? 'From | To' : (key as string).replace('show', '').replace(/([A-Z])/g, ' $1').trim()}
                   </button>
                 ))}
               </div>

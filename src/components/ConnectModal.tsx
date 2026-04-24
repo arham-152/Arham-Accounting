@@ -154,28 +154,35 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
 {`function doPost(e) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    // 1. Target the "Active" sheet exactly
-    const s = ss.getSheetByName("Active");
-    if (!s) throw new Error("Sheet 'Active' not found!"); 
+    // Use "Active" sheet, or fallback to the FIRST sheet if "Active" doesn't exist
+    let s = ss.getSheetByName("Active");
+    if (!s) {
+       s = ss.getSheets()[0];
+       console.warn("Sheet 'Active' not found, using first sheet: " + s.getName());
+    }
     
     const d = JSON.parse(e.postData.contents);
     const date = d.date || new Date().toISOString().split('T')[0];
 
-    // 2. High-speed lookup for Column B (Date) to find the next empty slot
+    // Find first empty row by checking Column B (Date)
     const lastRow = s.getLastRow();
-    const searchRange = s.getRange(1, 2, Math.max(lastRow, 5)).getValues();
-    let targetRow = 5;
-    for (let i = searchRange.length - 1; i >= 0; i--) {
-      if (searchRange[i][0]) {
+    const data = s.getRange(1, 2, Math.max(lastRow, 10)).getValues();
+    let targetRow = 1;
+    
+    // Scan from bottom to find last entry in Column B
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (data[i][0]) {
         targetRow = i + 2;
         break;
       }
     }
+    
+    // Ensure we don't write before header area (Start at row 5 as per standard template)
     if (targetRow < 5) targetRow = 5;
 
-    // 3. Update the row with data (A=SR, B=Date, C=Name, etc.)
-    // We don't overwrite Column A if it already has an SR number
-    const range = s.getRange(targetRow, 2, 1, 8); // Start from Column B
+    // A=SR, B=Date, C=Name, D=Amount, E=Category, F=Type, G=From, H=To, I=Notes
+    // We update B through I. 
+    const range = s.getRange(targetRow, 2, 1, 8); 
     range.setValues([[
       date, 
       d.name, 
@@ -187,31 +194,18 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
       d.notes
     ]]);
     
-    return ContentService.createTextOutput("OK - Entry added to row " + targetRow)
+    // Auto-increment SR in Column A if empty
+    const srCell = s.getRange(targetRow, 1);
+    if (!srCell.getValue()) {
+      srCell.setValue(targetRow - 4); // Assuming header ends at row 4
+    }
+    
+    return ContentService.createTextOutput("OK - Saved to " + s.getName() + " row " + targetRow)
       .setMimeType(ContentService.MimeType.TEXT);
   } catch (err) {
     return ContentService.createTextOutput("Error: " + err.message)
       .setMimeType(ContentService.MimeType.TEXT);
   }
-}
-
-// TEST FUNCTION
-function testMe() {
-  const fakeEvent = {
-    postData: {
-      contents: JSON.stringify({
-        date: "2026-04-23",
-        name: "Test to Active",
-        amount: 500,
-        category: "FIXED",
-        type: "CREDIT",
-        from: "CASH",
-        to: "OTHER",
-        notes: "Verified Column B"
-      })
-    }
-  };
-  console.log(doPost(fakeEvent).getContent());
 }`}
                        </pre>
                        <span className="absolute top-2 right-2 text-[8px] bg-accent-gold/20 text-accent-gold px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Select & Copy Code</span>

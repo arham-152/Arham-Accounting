@@ -178,7 +178,7 @@ const ReportConfigModal: React.FC<{
               )}
             >
               <span className="text-xs font-bold uppercase tracking-wider">
-                {key.replace('show', '').replace(/([A-Z])/g, ' $1').trim() === 'From To' ? 'From | To' : key.replace('show', '').replace(/([A-Z])/g, ' $1').trim()}
+                {(key as string).replace('show', '').replace(/([A-Z])/g, ' $1').trim() === 'From To' ? 'From | To' : (key as string).replace('show', '').replace(/([A-Z])/g, ' $1').trim()}
               </span>
               <div className={cn(
                 "w-5 h-5 rounded-md flex items-center justify-center transition-colors",

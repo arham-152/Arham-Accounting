@@ -70,18 +70,33 @@ export default function App() {
   });
 
   const [budgets, setBudgets] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem('account2026_budgets');
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem('account2026_budgets');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error('Failed to parse budgets from localStorage:', e);
+      return {};
+    }
   });
 
   const [wealthAssets, setWealthAssets] = useState<Asset[]>(() => {
-    const saved = localStorage.getItem('account2026_wealth');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('account2026_wealth');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error('Failed to parse wealth assets from localStorage:', e);
+      return [];
+    }
   });
 
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(() => {
-    const saved = localStorage.getItem('account2026_goals');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('account2026_goals');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error('Failed to parse savings goals from localStorage:', e);
+      return [];
+    }
   });
 
   useEffect(() => {
@@ -132,9 +147,9 @@ export default function App() {
       setLoading(true);
       setError(null);
       
-      if (!window.fetch) {
-        throw new Error("Financial engine failure: 'fetch' is not supported in this environment.");
-      }
+      // Abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
 
       let res: Response;
       let resText = '';
@@ -142,10 +157,10 @@ export default function App() {
 
       // Use our server-side proxy to avoid CORS issues
       const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
-      console.log(`[Sync] Requesting data via proxy: ${proxyUrl}`);
       
       try {
-        res = await window.fetch(`${proxyUrl}&cb=${Date.now()}`);
+        res = await window.fetch(`${proxyUrl}&cb=${Date.now()}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
         
         // If we get a 404 on the proxy route itself, it means we are likely on a static host (Netlify/Vercel)
         // without the associated backend. In this case, we MUST try a direct fetch.
@@ -219,7 +234,8 @@ export default function App() {
       setLastUpdated(new Date().toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }));
     } catch (err: any) {
       console.error('Core Sync Failure:', err);
-      setError(err.message);
+      const isTimeout = err.name === 'AbortError' || err.message?.includes('aborted');
+      setError(isTimeout ? "Sync Timeout: Connection to Google Sheets is taking too long." : err.message);
     } finally {
       setLoading(false);
     }
@@ -421,7 +437,7 @@ export default function App() {
 
   const handleAddTransaction = async (data: any) => {
     if (!syncUrl) {
-      setError("Please set up your 'Sync URL' in connections first to add transactions.");
+      setError("Sync URL missing. Please configure 'Sync URL' in Connections to enable cloud saving.");
       setIsModalOpen(true);
       return false;
     }
@@ -429,6 +445,7 @@ export default function App() {
     try {
       setError(null);
       setSuccessMsg(null);
+      
       const response = await fetch('/api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -441,18 +458,30 @@ export default function App() {
 
       const resultText = await response.text();
 
-      if (response.ok && (resultText.trim() === "OK" || resultText.includes("OK"))) {
-        setSuccessMsg("Entry saved successfully to spreadsheet!");
+      // Check if Apps Script returned an error explicitly in the message
+      if (!response.ok || resultText.toLowerCase().includes("error")) {
+         throw new Error(resultText || "Cloud rejected the entry. Check Apps Script logs.");
+      }
+
+      if (resultText.trim() === "OK" || resultText.includes("OK")) {
+        setSuccessMsg("Record confirmed by Cloud! Sycing ledger...");
+        
+        // 1. Give Google Sheets a moment to commit the write
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // 2. Perform a fresh sync
+        await syncFinancialData(csvUrl);
+        
+        // 3. Update success message to be final
+        setSuccessMsg("Success: Entry persistent in Spreadsheet.");
         setTimeout(() => setSuccessMsg(null), 5000);
-        // Faster re-sync after successful addition
-        setTimeout(() => syncFinancialData(csvUrl), 1500);
         return true;
       } else {
-        throw new Error(resultText || "Failed to confirm save. Check Apps Script.");
+        throw new Error("Unexpected response from cloud sync engine.");
       }
     } catch (err: any) {
-      console.error("Add failed:", err);
-      setError(`Record update failed: ${err.message}. Ensure your Script URL is published as 'Anyone'.`);
+      console.error("Cloud Error:", err);
+      setError(`CRITICAL: Entry NOT saved. (${err.message}). Check your Script URL and Sheet naming.`);
       return false;
     }
   };
