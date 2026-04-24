@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, FileText, Calendar, Download, AlertCircle } from 'lucide-react';
 import { Transaction } from '../types';
+import { cn } from '../lib/utils';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 
 interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onGenerate: (data: Transaction[], title: string, format: 'PDF' | 'EXCEL') => void;
+  onGenerate: (data: Transaction[], title: string, format: 'PDF' | 'EXCEL', options?: any) => void;
   transactions: Transaction[];
 }
 
@@ -15,6 +16,19 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onGen
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-01'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [error, setError] = useState('');
+  const [options, setOptions] = useState({
+    showDate: true,
+    showReference: true,
+    showAmount: true,
+    showCategory: true,
+    showType: true,
+    showFromTo: true,
+    showNotes: true
+  });
+
+  const toggleOption = (key: keyof typeof options) => {
+    setOptions(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleGenerate = (format: 'PDF' | 'EXCEL') => {
     if (!startDate || !endDate) {
@@ -41,7 +55,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onGen
     }
 
     const title = `Financial Report (${startDate} to ${endDate})`;
-    onGenerate(filtered, title, format);
+    onGenerate(filtered, title, format, options);
     onClose();
   };
 
@@ -73,10 +87,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onGen
             </div>
             
             <p className="text-text-secondary text-sm mb-6 leading-relaxed">
-              Select a custom date range to export your financial data.
+              Select date range and columns for your financial data export.
             </p>
             
-            <div className="space-y-4 mb-6">
+            <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Start Date</label>
                 <div className="relative">
@@ -85,7 +99,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onGen
                     type="date" 
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-surface-brighter border border-border-main text-text-primary text-sm pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors"
+                    className="w-full bg-surface-brighter border border-border-main text-text-primary text-xs pl-10 pr-4 py-2 rounded-xl outline-none focus:border-accent-gold transition-colors"
                   />
                 </div>
               </div>
@@ -98,9 +112,33 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onGen
                     type="date" 
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-surface-brighter border border-border-main text-text-primary text-sm pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-accent-gold transition-colors"
+                    className="w-full bg-surface-brighter border border-border-main text-text-primary text-xs pl-10 pr-4 py-2 rounded-xl outline-none focus:border-accent-gold transition-colors"
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3 block">Include Columns</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.entries(options) as [keyof typeof options, boolean][]).map(([key, value]) => (
+                  <button 
+                    key={key}
+                    onClick={() => toggleOption(key)}
+                    className={cn(
+                      "flex items-center gap-2 p-2 rounded-lg border text-[10px] font-bold transition-all",
+                      value ? "bg-accent-gold/10 border-accent-gold/40 text-accent-gold" : "bg-surface-brighter border-border-main text-text-muted"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-3 h-3 rounded flex items-center justify-center transition-colors",
+                      value ? "bg-accent-gold text-black" : "bg-surface border border-border-main"
+                    )}>
+                      {value && <Download size={8} strokeWidth={4} />}
+                    </div>
+                    {key.replace('show', '').replace(/([A-Z])/g, ' $1').trim() === 'From To' ? 'From | To' : key.replace('show', '').replace(/([A-Z])/g, ' $1').trim()}
+                  </button>
+                ))}
               </div>
             </div>
 

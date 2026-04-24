@@ -17,7 +17,7 @@ import { AddTransactionModal } from './components/AddTransactionModal';
 import { generatePDFReport, generateExcelReport } from './services/reportService';
 import { suggestCategory, batchCategorize } from './services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
-import { CircleDollarSign, Receipt, Scale, Handshake, Landmark, AlertCircle, FileText, BrainCircuit, Eye, EyeOff, TrendingDown, TrendingUp } from 'lucide-react';
+import { CircleDollarSign, Receipt, Scale, Handshake, Landmark, AlertCircle, FileText, BrainCircuit, Eye, EyeOff, TrendingDown, TrendingUp, Plus } from 'lucide-react';
 import { cn } from './lib/utils';
 
 const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
@@ -358,9 +358,28 @@ export default function App() {
     a.click();
   };
 
-  const handleReportGenerate = (data: Transaction[], title: string, format: 'PDF' | 'EXCEL') => {
+  const [logoBase64, setLogoBase64] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Pre-load logo for PDF reports
+    const loadLogo = async () => {
+      try {
+        const resp = await fetch('/logo-light.png');
+        if (!resp.ok) return;
+        const blob = await resp.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => setLogoBase64(reader.result as string);
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        console.warn('Failed to pre-load logo:', e);
+      }
+    };
+    loadLogo();
+  }, []);
+
+  const handleReportGenerate = (data: Transaction[], title: string, format: 'PDF' | 'EXCEL', options?: any) => {
     if (format === 'PDF') {
-      generatePDFReport(data, title);
+      generatePDFReport(data, title, { ...options, logoData: logoBase64 });
     } else {
       generateExcelReport(data, title);
     }
@@ -425,8 +444,8 @@ export default function App() {
       if (response.ok && (resultText.trim() === "OK" || resultText.includes("OK"))) {
         setSuccessMsg("Entry saved successfully to spreadsheet!");
         setTimeout(() => setSuccessMsg(null), 5000);
-        // Re-sync after successful addition
-        setTimeout(() => syncFinancialData(csvUrl), 3000);
+        // Faster re-sync after successful addition
+        setTimeout(() => syncFinancialData(csvUrl), 1500);
         return true;
       } else {
         throw new Error(resultText || "Failed to confirm save. Check Apps Script.");
@@ -710,7 +729,10 @@ export default function App() {
                 <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Master Ledger</h2>
                 <div className="flex-1 h-px bg-border-main" />
               </div>
-              <TransactionTable transactions={filteredData} />
+              <TransactionTable 
+                transactions={filteredData} 
+                onGenerateReport={handleReportGenerate}
+              />
             </section>
           </div>
         )}
@@ -756,7 +778,25 @@ export default function App() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-bg flex flex-col items-center justify-center gap-6"
           >
-            <div className="text-2xl font-display font-extrabold tracking-tighter">Account <span className="text-accent-gold">2026</span></div>
+            <div className="h-32 flex items-center justify-center">
+              {isDarkMode ? (
+                <img 
+                  src="/logo-dark.png" 
+                  alt="Account" 
+                  className="h-full w-auto object-contain" 
+                  style={{ imageRendering: '-webkit-optimize-contrast' }}
+                  referrerPolicy="no-referrer" 
+                />
+              ) : (
+                <img 
+                  src="/logo-light.png" 
+                  alt="Account" 
+                  className="h-full w-auto object-contain"
+                  style={{ imageRendering: '-webkit-optimize-contrast' }}
+                  referrerPolicy="no-referrer" 
+                />
+              )}
+            </div>
             <div className="w-12 h-12 border-4 border-border-main border-t-accent-gold rounded-full animate-spin" />
             <div className="text-[10px] font-mono text-text-muted uppercase tracking-[4px]">Initializing Systems...</div>
           </motion.div>

@@ -9,7 +9,7 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/png" href="/logo-app.png" />
     <link rel="apple-touch-icon" href="/logo-app.png" />
-    <title>Finance Dashboard</title>
+    <title>Account</title>
     <script>
       // Protection for the read-only 'fetch' property in AI Studio environment
       (function() {
@@ -38,7 +38,54 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static Splash Screen - shown instantly while JS loads -->
+      <style>
+        body { margin: 0; padding: 0; background-color: #0a0c10; }
+        #static-loader {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 24px;
+          background-color: #0a0c10;
+          color: #64748b;
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+          z-index: 9999;
+        }
+        .static-logo {
+          height: 128px;
+          width: auto;
+          object-fit: contain;
+          image-rendering: -webkit-optimize-contrast;
+        }
+        .static-spinner {
+          width: 48px;
+          height: 48px;
+          border: 4px solid #1f2430;
+          border-top: 4px solid #f0b429;
+          border-radius: 50%;
+          animation: static-spin 1s linear infinite;
+        }
+        @keyframes static-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .static-text {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 4px;
+          color: #64748b;
+        }
+      </style>
+      <div id="static-loader">
+        <img src="/logo-dark.png" class="static-logo" alt="Account">
+        <div class="static-spinner"></div>
+        <div class="static-text">Initializing Systems...</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -11,69 +11,223 @@ declare module 'jspdf' {
   }
 }
 
-export const generatePDFReport = (transactions: Transaction[], title: string) => {
+export interface ReportOptions {
+  showDate?: boolean;
+  showReference?: boolean;
+  showAmount?: boolean;
+  showCategory?: boolean;
+  showType?: boolean;
+  showFromTo?: boolean;
+  showNotes?: boolean;
+  logoData?: string;
+}
+
+export const generatePDFReport = (transactions: Transaction[], title: string, options?: ReportOptions) => {
   const doc = new jsPDF();
   
   // Theme colors
-  const ACCENT_COLOR: [number, number, number] = [240, 180, 41]; // Gold
-  const DARK_COLOR: [number, number, number] = [10, 12, 16];
+  const BG_COLOR: [number, number, number] = [232, 234, 235];
+  const WHITE: [number, number, number] = [255, 255, 255];
+  const TEXT_DARK: [number, number, number] = [31, 36, 48];
+  const TEXT_MUTED: [number, number, number] = [100, 116, 139];
+  const GREEN: [number, number, number] = [46, 125, 50];
+  const RED: [number, number, number] = [191, 54, 12];
   
-  // Header
-  doc.setFillColor(...DARK_COLOR);
-  doc.rect(0, 0, 210, 40, 'F');
+  // Page background
+  doc.setFillColor(...WHITE);
+  doc.rect(0, 0, 210, 297, 'F');
   
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
+  // Header section
+  doc.setFillColor(232, 234, 235);
+  doc.rect(10, 10, 190, 25, 'F');
+
+  // Logo Logic
+  if (options?.logoData) {
+    try {
+      doc.addImage(options.logoData, 'PNG', 12, 13.5, 18, 18, undefined, 'FAST');
+    } catch (e) {
+      // Branded placeholder if image fails
+      doc.setFillColor(31, 36, 48);
+      doc.rect(12, 13.5, 18, 18, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('A', 21, 26, { align: 'center' });
+    }
+  } else {
+    // Default Branded Icon
+    doc.setFillColor(31, 36, 48); 
+    doc.rect(12, 13.5, 18, 18, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('A', 21, 26, { align: 'center' });
+  }
+
+  // App Title
+  doc.setTextColor(31, 36, 48); // TEXT_DARK
+  doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('ACCOUNT 2026', 15, 20);
+  doc.text('ACCOUNT', 35, 23);
+  doc.setFontSize(14);
+  doc.setTextColor(234, 179, 8); // Gold color
+  doc.text('2026', 35, 30);
   
-  doc.setTextColor(...ACCENT_COLOR);
-  doc.setFontSize(10);
-  doc.text(title.toUpperCase(), 15, 30);
+  // Timestamp in header
+  doc.setTextColor(100, 116, 139); // TEXT_MUTED
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Generated: ${format(new Date(), 'MMM dd, yyyy, hh:mm a')}`, 195, 22.5, { align: 'right' });
   
-  doc.setTextColor(150, 150, 150);
-  doc.text(`Generated on ${format(new Date(), 'PPpp')}`, 140, 30);
+  // Report title
+  doc.setTextColor(31, 36, 48); // TEXT_DARK
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title.toUpperCase(), 15, 48);
 
   // Summary Metrics
-  const income = transactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
-  const expense = transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
+  const credit = transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const debit = transactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const net = debit - credit;
   
+  const formatPDFCurrency = (amt: number) => {
+    const val = Number(amt) || 0;
+    return `Rs ${Math.round(val).toLocaleString()}`;
+  };
+
+  // Define column mapping based on options or defaults
+  const showDate = options?.showDate !== false;
+  const showReference = options?.showReference !== false;
+  const showAmount = options?.showAmount !== false;
+  const showCategory = options?.showCategory !== false;
+  const showType = options?.showType !== false;
+  const showFromTo = options?.showFromTo !== false;
+  const showNotes = options?.showNotes !== false;
+
+  const headers = [];
+  if (showDate) headers.push('Date');
+  if (showReference) headers.push('Reference');
+  if (showAmount) headers.push('Amount');
+  if (showCategory) headers.push('Category');
+  if (showType) headers.push('Type');
+  if (showFromTo) headers.push('From | To');
+  if (showNotes) headers.push('Notes');
+
   // Table
-  const tableData = transactions.map(t => [
-    t.date,
-    t.name,
-    t.category,
-    t.type,
-    t.from,
-    t.to,
-    formatPKR(t.amount)
-  ]);
+  const tableData = transactions.map(t => {
+    const row = [];
+    if (showDate) {
+      try {
+        const d = new Date(t.date);
+        row.push(isNaN(d.getTime()) ? (t.date || '-') : format(d, 'MMM dd'));
+      } catch {
+        row.push(t.date || '-');
+      }
+    }
+    if (showReference) row.push(t.name);
+    if (showAmount) row.push(formatPDFCurrency(t.amount));
+    if (showCategory) row.push(t.category);
+    if (showType) row.push(t.type);
+    if (showFromTo) row.push(`${t.from} | ${t.to}`);
+    if (showNotes) row.push(t.notes || '-');
+    return row;
+  });
 
   autoTable(doc, {
-    startY: 50,
-    head: [['Date', 'Reference', 'Category', 'Type', 'From', 'To', 'Amount']],
+    startY: 55,
+    margin: { left: 10, right: 10 },
+    head: [headers],
     body: tableData,
-    headStyles: { fillColor: [31, 36, 48], textColor: [232, 234, 240], fontSize: 9 },
-    alternateRowStyles: { fillColor: [248, 249, 251] },
-    styles: { fontSize: 8, cellPadding: 3 },
-    columnStyles: {
-      6: { halign: 'right', fontStyle: 'bold' }
+    theme: 'plain',
+    headStyles: { 
+      fillColor: [232, 234, 235], 
+      textColor: [31, 36, 48], 
+      fontSize: 8, 
+      fontStyle: 'bold',
+      cellPadding: 3
     },
-    didDrawPage: (data: any) => {
-      // Custom footer or padding if needed
+    bodyStyles: { 
+      fontSize: 7, 
+      cellPadding: 3, 
+      textColor: [31, 36, 48] 
+    },
+    columnStyles: {
+      [headers.indexOf('Amount')]: { halign: 'right', fontStyle: 'bold' },
+      [headers.indexOf('Type')]: { halign: 'center' }
+    },
+    didParseCell: (data: any) => {
+      // Color Logic: Credit = Red, Debit = Green
+      if (data.section === 'body' && headers[data.column.index] === 'Type') {
+        const type = data.cell.raw as string;
+        if (type === 'CREDIT') {
+          data.cell.styles.textColor = RED;
+        } else if (type === 'DEBIT') {
+          data.cell.styles.textColor = GREEN;
+        }
+      }
+    },
+    didDrawCell: (data: any) => {
+      if (data.section === 'body') {
+        const x = Number(data.cell.x);
+        const y = Number(data.cell.y);
+        const w = Number(data.cell.width);
+        const h = Number(data.cell.height);
+        
+        if (isFinite(x) && isFinite(y) && isFinite(w) && isFinite(h)) {
+          doc.setDrawColor(220, 220, 220);
+          doc.setLineWidth(0.1);
+          doc.line(x, y + h, x + w, y + h);
+        }
+      }
     }
   });
 
-  const finalY = (doc as any).lastAutoTable?.finalY + 10 || 150;
+  const lastTable = (doc as any).lastAutoTable;
+  let finalY = 150;
+  if (lastTable && typeof lastTable.finalY === 'number' && isFinite(lastTable.finalY)) {
+    finalY = lastTable.finalY + 10;
+  }
   
-  doc.setTextColor(...DARK_COLOR);
+  // Ensure finalY is a safe number
+  if (!isFinite(finalY)) finalY = 150;
+
+  // Check if we need a new page for footer
+  if (finalY > 250) {
+    doc.addPage();
+    finalY = 20;
+  }
+  
+  // Footer Summary Card
+  doc.setFillColor(232, 234, 235);
+  doc.rect(10, finalY, 190, 35, 'F');
+  
+  doc.setTextColor(31, 36, 48); 
   doc.setFontSize(10);
-  doc.text(`Total Transactions: ${transactions.length}`, 15, finalY);
-  doc.text(`Total Income: ${formatPKR(income)}`, 15, finalY + 5);
-  doc.text(`Total Expense: ${formatPKR(expense)}`, 15, finalY + 10);
-  const saving = transactions.filter(t => t.type === 'SAVING').reduce((s, t) => s + t.amount, 0);
-  doc.text(`Total Savings: ${formatPKR(saving)}`, 15, finalY + 15);
-  doc.text(`Net: ${formatPKR(income - expense)}`, 15, finalY + 20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CATEGORY SUMMARY', 15, finalY + 8);
+  
+  const categoryName = title.split(' ')[0] || 'MASTER';
+  doc.setFont('helvetica', 'normal');
+  doc.text(categoryName, 15, finalY + 22);
+  
+  // Totals in footer - precisely positioned to avoid clashing
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139); // TEXT_MUTED
+  doc.text('TOTAL DEBIT', 85, finalY + 10);
+  doc.text('TOTAL CREDIT', 140, finalY + 10);
+  doc.text('NET POSITION', 195, finalY + 10, { align: 'right' });
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  
+  doc.setTextColor(46, 125, 50); // Green for Debit
+  doc.text(formatPDFCurrency(debit), 85, finalY + 22);
+  
+  doc.setTextColor(191, 54, 12); // Red for Credit
+  doc.text(formatPDFCurrency(credit), 140, finalY + 22);
+
+  doc.setTextColor(31, 36, 48); // Dark for Net
+  doc.text(formatPDFCurrency(net), 195, finalY + 22, { align: 'right' });
 
   doc.save(`Financial_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };

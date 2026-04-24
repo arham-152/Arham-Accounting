@@ -161,16 +161,17 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
     const d = JSON.parse(e.postData.contents);
     const date = d.date || new Date().toISOString().split('T')[0];
 
-    // 2. Find the correct row by looking at Column B (Date column)
-    // We look for the first empty cell in Column B starting from row 5
-    const colB = s.getRange("B:B").getValues();
-    let targetRow = 5; // Rows 1-4 are headers/info in your screenshot
-    for (let i = 4; i < colB.length; i++) {
-       if (!colB[i][0]) {
-         targetRow = i + 1;
-         break;
-       }
+    // 2. High-speed lookup for Column B (Date) to find the next empty slot
+    const lastRow = s.getLastRow();
+    const searchRange = s.getRange(1, 2, Math.max(lastRow, 5)).getValues();
+    let targetRow = 5;
+    for (let i = searchRange.length - 1; i >= 0; i--) {
+      if (searchRange[i][0]) {
+        targetRow = i + 2;
+        break;
+      }
     }
+    if (targetRow < 5) targetRow = 5;
 
     // 3. Update the row with data (A=SR, B=Date, C=Name, etc.)
     // We don't overwrite Column A if it already has an SR number

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2, FileDown, Printer, Database, FileText, RefreshCw, Sun, Moon, PlusCircle } from 'lucide-react';
+import { Share2, FileDown, Printer, Database, FileText, RefreshCw, Sun, Moon, PlusCircle, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -44,9 +44,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-3">
           <div className="h-10 flex items-center justify-center">
             {isDarkMode ? (
-              <img src="/logo-dark.png" alt="Arham Ledger" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
+              <img src="/logo-dark.png" alt="Account" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
             ) : (
-              <img src="/logo-light.png" alt="Arham Ledger" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
+              <img src="/logo-light.png" alt="Account" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
             )}
           </div>
           <div className="hidden sm:block border-l border-border-main pl-3 h-6 flex items-center">
@@ -101,6 +101,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             )}
           </button>
+          
+          {/* Mobile Quick Add Integrated Button */}
+          <button 
+            onClick={onAddClick}
+            className="sm:hidden flex items-center justify-center w-10 h-10 bg-accent-gold text-black rounded-lg ml-1 shadow-lg active:scale-95 transition-transform shrink-0"
+            aria-label="Quick Entry"
+          >
+            <Plus size={24} strokeWidth={3} />
+          </button>
         </div>
       </div>
 
@@ -135,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button 
             onClick={onAddClick}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-accent-gold/30 bg-accent-gold/5 text-accent-gold text-[11px] font-bold transition-all hover:bg-accent-gold hover:text-black active:scale-95 shadow-sm shadow-accent-gold/5"
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-accent-gold/30 bg-accent-gold/5 text-accent-gold text-[11px] font-bold transition-all hover:bg-accent-gold hover:text-black active:scale-95 shadow-sm shadow-accent-gold/5"
           >
             <PlusCircle size={14} />
             <span className="hidden lg:inline">Quick Entry</span>
