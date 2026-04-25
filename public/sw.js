@@ -1,10 +1,10 @@
 // Basic Service Worker for PWA compliance
 const CACHE_NAME = 'arham-ledger-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/logo-app.png'
+  './',
+  'index.html',
+  'manifest.json',
+  'logo-app.png'
 ];
 
 self.addEventListener('install', (event) => {

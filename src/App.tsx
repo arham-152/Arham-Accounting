@@ -180,21 +180,22 @@ export default function App() {
       let isUsingProxy = true;
 
       // Use our server-side proxy to avoid CORS issues
-      const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+      const proxyUrl = `api/proxy?url=${encodeURIComponent(url)}`;
       
       try {
+        // Try proxy first
         res = await window.fetch(`${proxyUrl}&cb=${Date.now()}`, { signal: controller.signal });
         clearTimeout(timeoutId);
         
-        // If we get a 404 on the proxy route itself, it means we are likely on a static host (Netlify/Vercel)
-        // without the associated backend. In this case, we MUST try a direct fetch.
-        if (res.status === 404) {
-          console.warn('[Sync] Proxy endpoint not found (404). Switching to direct fetch fallback...');
+        // If we get a 404 or a non-JSON response from the proxy, it means we are likely on a static host
+        const contentType = res.headers.get('content-type');
+        if (res.status === 404 || (contentType && contentType.includes('text/html'))) {
+          console.warn('[Sync] Proxy unavailable (Static host). Trying direct fetch...');
           isUsingProxy = false;
           res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
         }
       } catch (proxyErr) {
-        console.warn('[Sync] Proxy request failed. Attempting direct fetch fallback...', proxyErr);
+        console.warn('[Sync] Proxy communication failed. Falling back to direct fetch...', proxyErr);
         isUsingProxy = false;
         res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
       }
@@ -404,8 +405,11 @@ export default function App() {
     // Pre-load logo for PDF reports
     const loadLogo = async () => {
       try {
-        const resp = await fetch('/logo-light.png');
-        if (!resp.ok) return;
+        const resp = await fetch('logo-light.png');
+        if (!resp.ok) {
+           console.warn('Logo fetch failed with status:', resp.status);
+           return;
+        }
         const blob = await resp.blob();
         const reader = new FileReader();
         reader.onloadend = () => setLogoBase64(reader.result as string);
@@ -470,7 +474,7 @@ export default function App() {
       setError(null);
       setSuccessMsg(null);
       
-      const response = await fetch('/api/proxy', {
+      const response = await fetch('api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

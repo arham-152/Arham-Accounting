@@ -48,9 +48,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-3">
           <div className="h-10 flex items-center justify-center">
             {isDarkMode ? (
-              <img src="/logo-dark.png" alt="Account" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
+              <img src="logo-dark.png" alt="Account" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
             ) : (
-              <img src="/logo-light.png" alt="Account" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
+              <img src="logo-light.png" alt="Account" className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
             )}
           </div>
           <div className="hidden sm:block border-l border-border-main pl-3 h-6 flex items-center">
