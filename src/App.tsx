@@ -180,7 +180,7 @@ export default function App() {
       let isUsingProxy = true;
 
       // Use our server-side proxy to avoid CORS issues
-      const proxyUrl = `api/proxy?url=${encodeURIComponent(url)}`;
+      const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
       
       try {
         // Try proxy first
@@ -405,7 +405,7 @@ export default function App() {
     // Pre-load logo for PDF reports
     const loadLogo = async () => {
       try {
-        const resp = await fetch('logo-light.png');
+        const resp = await fetch('/logo-light.png');
         if (!resp.ok) {
            console.warn('Logo fetch failed with status:', resp.status);
            return;
@@ -474,7 +474,7 @@ export default function App() {
       setError(null);
       setSuccessMsg(null);
       
-      const response = await fetch('api/proxy', {
+      const response = await fetch('/api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
