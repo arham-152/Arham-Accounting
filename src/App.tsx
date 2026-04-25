@@ -71,6 +71,14 @@ export default function App() {
     setDeferredPrompt(null);
   };
 
+  const [showSkip, setShowSkip] = useState(false);
+
+  useEffect(() => {
+    // Show 'Skip Search' button if it takes more than 6 seconds
+    const timer = setTimeout(() => setShowSkip(true), 6000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
     if (isDarkMode) {
@@ -405,7 +413,7 @@ export default function App() {
     // Pre-load logo for PDF reports
     const loadLogo = async () => {
       try {
-        const resp = await fetch('/logo-light.png');
+        const resp = await fetch('logo-light.png');
         if (!resp.ok) {
            console.warn('Logo fetch failed with status:', resp.status);
            return;
@@ -838,26 +846,33 @@ export default function App() {
             className="fixed inset-0 z-[100] bg-bg flex flex-col items-center justify-center gap-6"
           >
             <div className="h-32 flex items-center justify-center">
-              {isDarkMode ? (
-                <img 
-                  src="/logo-dark.png" 
-                  alt="Account" 
-                  className="h-full w-auto object-contain" 
-                  style={{ imageRendering: '-webkit-optimize-contrast' }}
-                  referrerPolicy="no-referrer" 
-                />
-              ) : (
-                <img 
-                  src="/logo-light.png" 
-                  alt="Account" 
-                  className="h-full w-auto object-contain"
-                  style={{ imageRendering: '-webkit-optimize-contrast' }}
-                  referrerPolicy="no-referrer" 
-                />
-              )}
+              <img 
+                src={isDarkMode ? "logo-dark.png" : "logo-light.png"} 
+                alt="Account" 
+                className="h-full w-auto object-contain" 
+                style={{ imageRendering: '-webkit-optimize-contrast' }}
+                referrerPolicy="no-referrer"
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+              />
             </div>
-            <div className="w-12 h-12 border-4 border-border-main border-t-accent-gold rounded-full animate-spin" />
-            <div className="text-[10px] font-mono text-text-muted uppercase tracking-[4px]">Initializing Systems...</div>
+            <div className="relative">
+              <div className="w-12 h-12 border-2 border-border-main border-t-accent-gold rounded-full animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="w-1 h-1 bg-accent-gold rounded-full animate-ping" />
+              </div>
+            </div>
+            <div className="text-[10px] font-mono text-text-muted uppercase tracking-[4px] animate-pulse">Initializing Systems...</div>
+            
+            {showSkip && (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => setLoading(false)}
+                className="mt-8 px-6 py-2 rounded-full border border-border-main text-[10px] uppercase tracking-widest text-text-muted hover:text-accent-gold hover:border-accent-gold transition-all"
+              >
+                Skip Synchronization
+              </motion.button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
