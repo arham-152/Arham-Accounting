@@ -90,11 +90,13 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
-// Service Worker disabled to prevent stale cache issues during rapid development
+// Service Worker registration for PWA
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const registration of registrations) {
-      registration.unregister();
-    }
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(registration => {
+      console.log('SW registered: ', registration);
+    }).catch(registrationError => {
+      console.log('SW registration failed: ', registrationError);
+    });
   });
 }

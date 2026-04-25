@@ -18,6 +18,8 @@ interface NavbarProps {
   onToggleFilters: () => void;
   showFilters: boolean;
   onAddClick: () => void;
+  isInstallable?: boolean;
+  onInstallClick?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
@@ -34,7 +36,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onViewChange,
   onToggleFilters,
   showFilters,
-  onAddClick
+  onAddClick,
+  isInstallable,
+  onInstallClick
 }) => {
   const isOnline = status === 'online';
 
@@ -54,16 +58,28 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
         
-        {/* Mobile Status Indicator */}
-        <div className="flex sm:hidden items-center gap-2 border rounded-full px-2.5 py-1 transition-colors duration-500 bg-surface-brighter border-border-main">
-          <motion.div 
-            animate={{ opacity: isOnline ? [1, 0.4, 1] : 1 }} 
-            transition={{ duration: 2, repeat: Infinity }}
-            className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-income' : 'bg-expense'}`}
-          />
-          <span className={`text-[8px] font-bold tracking-widest uppercase ${isOnline ? 'text-income' : 'text-expense'}`}>
-            {isOnline ? 'Live' : 'Offline'}
-          </span>
+        {/* Mobile Download/Status Indicator Group */}
+        <div className="flex items-center gap-2">
+          {isInstallable && (
+            <button 
+              onClick={onInstallClick}
+              className="flex sm:hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-gold text-black text-[10px] font-bold uppercase tracking-wider animate-pulse shadow-lg shadow-accent-gold/20"
+            >
+              <FileDown size={14} />
+              Install
+            </button>
+          )}
+          
+          <div className="flex sm:hidden items-center gap-2 border rounded-full px-2.5 py-1 transition-colors duration-500 bg-surface-brighter border-border-main">
+            <motion.div 
+              animate={{ opacity: isOnline ? [1, 0.4, 1] : 1 }} 
+              transition={{ duration: 2, repeat: Infinity }}
+              className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-income' : 'bg-expense'}`}
+            />
+            <span className={`text-[8px] font-bold tracking-widest uppercase ${isOnline ? 'text-income' : 'text-expense'}`}>
+              {isOnline ? 'Live' : 'Offline'}
+            </span>
+          </div>
         </div>
       </div>
 

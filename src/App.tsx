@@ -46,6 +46,30 @@ export default function App() {
   const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('account2026_privacy') === 'true');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+      console.log('Install prompt deferred');
+    });
+
+    window.addEventListener('appinstalled', (evt) => {
+      setDeferredPrompt(null);
+      console.log('App was installed');
+    });
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    setDeferredPrompt(null);
+  };
 
   useEffect(() => {
     localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
@@ -504,6 +528,8 @@ export default function App() {
           onToggleFilters={() => setShowMobileFilters(!showMobileFilters)}
           showFilters={showMobileFilters}
           onAddClick={() => setIsAddModalOpen(true)}
+          isInstallable={!!deferredPrompt}
+          onInstallClick={handleInstallClick}
         />
 
         <AnimatePresence>
