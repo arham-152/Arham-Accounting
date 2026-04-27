@@ -149,11 +149,36 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
                       <li>Execute as: <b>Me</b> | Who has access: <b>Anyone</b> (Essential!)</li>
                       <li>Click <b>Deploy</b>, Authorize access, and copy the <b>Web App URL</b></li>
                     </ol>
+                      <div className="bg-surface-brighter border border-border-main p-4 rounded-xl space-y-3">
+                        <div className="flex items-start gap-2">
+                          <div className="w-5 h-5 rounded-full bg-income/20 text-income flex items-center justify-center text-xs font-bold mt-0.5 shrink-0">1</div>
+                          <div>
+                            <p className="font-bold text-xs uppercase tracking-wider text-text-main mb-1">Publish for Static Hosting</p>
+                            <p className="text-[10px] text-text-muted leading-relaxed">
+                              If you are using Cloudflare/Netlify, you MUST go to <strong className="text-accent-gold">File &gt; Share &gt; Publish to web</strong>. 
+                              Select <strong className="text-accent-gold">CSV</strong> format and click Publish. Copy THAT link and use it in Step 4 below.
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-2">
+                          <div className="w-5 h-5 rounded-full bg-income/20 text-income flex items-center justify-center text-xs font-bold mt-0.5 shrink-0">2</div>
+                          <div>
+                            <p className="font-bold text-xs uppercase tracking-wider text-text-main mb-1">Apps Script Access</p>
+                            <p className="text-[10px] text-text-muted leading-relaxed">
+                              When deploying the script, set <strong className="text-accent-gold">"Who has access"</strong> to <strong className="text-accent-gold">"Anyone"</strong>. 
+                              If you select "Anyone with Google Account", the app will be blocked by CORS on static hosts.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     <div className="relative group max-h-48 overflow-y-auto custom-scrollbar rounded-lg border border-border-main scrollbar-thin">
                        <pre className="p-3 bg-black/40 font-mono text-[9px] text-income select-all leading-relaxed whitespace-pre">
 {`function doPost(e) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) throw new Error("Could not access active spreadsheet. Check permissions.");
+    
     // Use "Active" sheet, or fallback to the FIRST sheet if "Active" doesn't exist
     let s = ss.getSheetByName("Active");
     if (!s) {
@@ -161,6 +186,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
        console.warn("Sheet 'Active' not found, using first sheet: " + s.getName());
     }
     
+    if (!e.postData || !e.postData.contents) throw new Error("No data received");
     const d = JSON.parse(e.postData.contents);
     const date = d.date || new Date().toISOString().split('T')[0];
 

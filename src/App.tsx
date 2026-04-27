@@ -71,14 +71,6 @@ export default function App() {
     setDeferredPrompt(null);
   };
 
-  const [showSkip, setShowSkip] = useState(false);
-
-  useEffect(() => {
-    // Show 'Skip Search' button if it takes more than 6 seconds
-    const timer = setTimeout(() => setShowSkip(true), 6000);
-    return () => clearTimeout(timer);
-  }, []);
-
   useEffect(() => {
     localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
     if (isDarkMode) {
@@ -191,23 +183,27 @@ export default function App() {
       const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
       
       try {
-        // Try proxy first
         res = await window.fetch(`${proxyUrl}&cb=${Date.now()}`, { signal: controller.signal });
         clearTimeout(timeoutId);
         
-        // If we get a 404 or a non-JSON response from the proxy, it means we are likely on a static host
-        const contentType = res.headers.get('content-type');
-        if (res.status === 404 || (contentType && contentType.includes('text/html'))) {
-          console.warn('[Sync] Proxy unavailable (Static host). Trying direct fetch...');
+        // If we get a 404 on the proxy route itself, it means we are likely on a static host (Netlify/Vercel)
+        // without the associated backend. In this case, we MUST try a direct fetch.
+        if (res.status === 404) {
+          console.warn('[Sync] Proxy endpoint not found (404). Switching to direct fetch fallback...');
           isUsingProxy = false;
           res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
         }
       } catch (proxyErr) {
-        console.warn('[Sync] Proxy communication failed. Falling back to direct fetch...', proxyErr);
+        console.warn('[Sync] Proxy request failed. Attempting direct fetch fallback...', proxyErr);
         isUsingProxy = false;
-        res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
+        try {
+          res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
+        } catch (directErr) {
+          throw new Error("Static Deployment Sync Error: Failed to reach sheet directly. Please ensure your Google Sheet is 'Published to the web' as CSV (Check Connections modal).");
+        }
       }
 
+      if (!res) throw new Error("Connection failed: No response recovered.");
       const clone = res.clone();
       
       if (isUsingProxy) {
@@ -413,11 +409,8 @@ export default function App() {
     // Pre-load logo for PDF reports
     const loadLogo = async () => {
       try {
-        const resp = await fetch('logo-light.png');
-        if (!resp.ok) {
-           console.warn('Logo fetch failed with status:', resp.status);
-           return;
-        }
+        const resp = await fetch('/logo-light.png');
+        if (!resp.ok) return;
         const blob = await resp.blob();
         const reader = new FileReader();
         reader.onloadend = () => setLogoBase64(reader.result as string);
@@ -482,21 +475,45 @@ export default function App() {
       setError(null);
       setSuccessMsg(null);
       
-      const response = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: syncUrl,
+      let response: Response;
+      
+      try {
+        response = await fetch('/api/proxy', {
           method: 'POST',
-          data: data
-        })
-      });
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: syncUrl,
+            method: 'POST',
+            data: data
+          })
+        });
+
+        // Detect if the proxy itself is missing (404/502) rather than the script returning an error
+        if (response.status === 404 || response.status === 502) {
+          console.warn("[Add] Proxy endpoint not available. Attempting direct push to script...");
+          throw new Error("PROXY_UNAVAILABLE");
+        }
+      } catch (proxyErr: any) {
+        if (proxyErr.message === "PROXY_UNAVAILABLE" || proxyErr.name === "TypeError") {
+          // Direct fetch fallback for static hosts
+          // Using no-cors might allow the write even if we can't read the response
+          // But Apps Script usually requires CORS for actual status confirmation
+          response = await fetch(syncUrl, {
+            method: 'POST',
+            mode: 'cors', // Try cors first
+            headers: { 'Content-Type': 'text/plain' }, // Using text/plain to avoid some pre-flight complexities
+            body: JSON.stringify(data)
+          });
+        } else {
+          throw proxyErr;
+        }
+      }
 
       const resultText = await response.text();
 
       // Check if Apps Script returned an error explicitly in the message
       if (!response.ok || resultText.toLowerCase().includes("error")) {
-         throw new Error(resultText || "Cloud rejected the entry. Check Apps Script logs.");
+         throw new Error(resultText || "Cloud rejected the entry. Ensure your Apps Script is Published as 'Web App' and shared with 'Anyone'.");
       }
 
       if (resultText.trim() === "OK" || resultText.includes("OK")) {
@@ -846,33 +863,26 @@ export default function App() {
             className="fixed inset-0 z-[100] bg-bg flex flex-col items-center justify-center gap-6"
           >
             <div className="h-32 flex items-center justify-center">
-              <img 
-                src={isDarkMode ? "logo-dark.png" : "logo-light.png"} 
-                alt="Account" 
-                className="h-full w-auto object-contain" 
-                style={{ imageRendering: '-webkit-optimize-contrast' }}
-                referrerPolicy="no-referrer"
-                onError={(e) => (e.currentTarget.style.display = 'none')}
-              />
+              {isDarkMode ? (
+                <img 
+                  src="/logo-dark.png" 
+                  alt="Account" 
+                  className="h-full w-auto object-contain" 
+                  style={{ imageRendering: '-webkit-optimize-contrast' }}
+                  referrerPolicy="no-referrer" 
+                />
+              ) : (
+                <img 
+                  src="/logo-light.png" 
+                  alt="Account" 
+                  className="h-full w-auto object-contain"
+                  style={{ imageRendering: '-webkit-optimize-contrast' }}
+                  referrerPolicy="no-referrer" 
+                />
+              )}
             </div>
-            <div className="relative">
-              <div className="w-12 h-12 border-2 border-border-main border-t-accent-gold rounded-full animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                 <div className="w-1 h-1 bg-accent-gold rounded-full animate-ping" />
-              </div>
-            </div>
-            <div className="text-[10px] font-mono text-text-muted uppercase tracking-[4px] animate-pulse">Initializing Systems...</div>
-            
-            {showSkip && (
-              <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => setLoading(false)}
-                className="mt-8 px-6 py-2 rounded-full border border-border-main text-[10px] uppercase tracking-widest text-text-muted hover:text-accent-gold hover:border-accent-gold transition-all"
-              >
-                Skip Synchronization
-              </motion.button>
-            )}
+            <div className="w-12 h-12 border-4 border-border-main border-t-accent-gold rounded-full animate-spin" />
+            <div className="text-[10px] font-mono text-text-muted uppercase tracking-[4px]">Initializing Systems...</div>
           </motion.div>
         )}
       </AnimatePresence>
