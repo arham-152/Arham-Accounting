@@ -47,6 +47,16 @@ export default function App() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStaticHost, setIsStaticHost] = useState(false);
+
+  useEffect(() => {
+    // Detect if we are on a static host (Cloudflare Workers, Netlify, Github Pages, etc)
+    const hostname = window.location.hostname;
+    if (hostname.includes('workers.dev') || hostname.includes('netlify.app') || hostname.includes('github.io') || hostname.includes('pages.dev')) {
+      setIsStaticHost(true);
+      console.log("[System] Static host detected. Optimizing connection logic.");
+    }
+  }, []);
 
   useEffect(() => {
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -179,27 +189,31 @@ export default function App() {
       let resText = '';
       let isUsingProxy = true;
 
-      // Use our server-side proxy to avoid CORS issues
+      // Use server-side proxy ONLY if not confirmed static, or try it first
       const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
       
       try {
+        if (isStaticHost) {
+          throw new Error("SKIP_PROXY");
+        }
+        
         res = await window.fetch(`${proxyUrl}&cb=${Date.now()}`, { signal: controller.signal });
         clearTimeout(timeoutId);
         
-        // If we get a 404 on the proxy route itself, it means we are likely on a static host (Netlify/Vercel)
-        // without the associated backend. In this case, we MUST try a direct fetch.
-        if (res.status === 404) {
-          console.warn('[Sync] Proxy endpoint not found (404). Switching to direct fetch fallback...');
+        if (res.status === 404 || res.status === 502) {
+          console.warn('[Sync] Proxy endpoint unavailable. Switching to direct fetch...');
           isUsingProxy = false;
           res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
         }
-      } catch (proxyErr) {
-        console.warn('[Sync] Proxy request failed. Attempting direct fetch fallback...', proxyErr);
+      } catch (proxyErr: any) {
+        if (proxyErr.message !== "SKIP_PROXY") {
+          console.warn('[Sync] Proxy request failed. Attempting direct fetch fallback...', proxyErr);
+        }
         isUsingProxy = false;
         try {
           res = await window.fetch(`${url}&cb_direct=${Date.now()}`);
         } catch (directErr) {
-          throw new Error("Static Deployment Sync Error: Failed to reach sheet directly. Please ensure your Google Sheet is 'Published to the web' as CSV (Check Connections modal).");
+          throw new Error("Connection Failure: Failed to reach sheet directly. Since you are on a static domain, please ensure your Google Sheet is 'Published to the web' as CSV in the Share menu.");
         }
       }
 
@@ -860,29 +874,53 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-bg flex flex-col items-center justify-center gap-6"
+            className="fixed inset-0 z-[100] bg-bg flex flex-col items-center justify-center p-6 gap-6"
           >
-            <div className="h-32 flex items-center justify-center">
-              {isDarkMode ? (
-                <img 
-                  src="/logo-dark.png" 
-                  alt="Account" 
-                  className="h-full w-auto object-contain" 
-                  style={{ imageRendering: '-webkit-optimize-contrast' }}
-                  referrerPolicy="no-referrer" 
-                />
-              ) : (
-                <img 
-                  src="/logo-light.png" 
-                  alt="Account" 
-                  className="h-full w-auto object-contain"
-                  style={{ imageRendering: '-webkit-optimize-contrast' }}
-                  referrerPolicy="no-referrer" 
-                />
-              )}
+            <div className="h-24 sm:h-32 flex items-center justify-center">
+              <img 
+                src={isDarkMode ? "/logo-dark.png" : "/logo-light.png"} 
+                alt="Account" 
+                className="h-full w-auto object-contain opacity-80" 
+                onError={(e) => {
+                  // Fallback for broken images on some hosting environments
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
-            <div className="w-12 h-12 border-4 border-border-main border-t-accent-gold rounded-full animate-spin" />
-            <div className="text-[10px] font-mono text-text-muted uppercase tracking-[4px]">Initializing Systems...</div>
+            
+            {!error ? (
+              <>
+                <div className="w-10 h-10 border-2 border-border-main border-t-accent-gold rounded-full animate-spin" />
+                <div className="text-[10px] font-mono text-text-muted uppercase tracking-[4px]">Initializing Systems...</div>
+              </>
+            ) : (
+              <div className="max-w-md w-full bg-surface-brighter border border-border-main p-6 rounded-2xl text-center space-y-4 animate-in zoom-in-95 duration-300">
+                <div className="w-12 h-12 rounded-full bg-expense/10 text-expense flex items-center justify-center mx-auto mb-2">
+                  <AlertCircle size={24} />
+                </div>
+                <h2 className="text-sm font-bold text-text-main uppercase tracking-widest">Initialization Failed</h2>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  {error}
+                </p>
+                <div className="flex flex-col gap-2 pt-2">
+                  <button 
+                    onClick={() => syncFinancialData(csvUrl)}
+                    className="w-full py-3 bg-accent-gold text-black text-[10px] font-bold uppercase tracking-wider rounded-xl hover:opacity-90 active:scale-[0.98] transition-all"
+                  >
+                    Retry Sync
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsModalOpen(true);
+                      setLoading(false);
+                    }}
+                    className="w-full py-3 bg-surface border border-border-main text-text-main text-[10px] font-bold uppercase tracking-wider rounded-xl hover:bg-surface-brighter transition-all"
+                  >
+                    Check Connection Settings
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
