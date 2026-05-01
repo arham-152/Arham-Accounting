@@ -19,7 +19,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
     category: 'MISLINIUS',
     type: 'CREDIT',
     from: 'CASH',
-    to: 'OTHER',
+    to: 'CASH',
     notes: ''
   });
 
@@ -39,7 +39,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
         category: 'MISLINIUS',
         type: 'CREDIT',
         from: 'CASH',
-        to: 'OTHER',
+        to: 'CASH',
         notes: ''
       });
       onClose();
@@ -185,7 +185,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Category</label>
               <div className="flex flex-wrap gap-2">
-                {['SALARY', 'BORROW', 'SAVING', 'TRANSFER', ...EXPENSE_CATEGORIES].map(cat => (
+                {['SALARY', 'INCOME', 'BORROW', 'SAVING', 'TRANSFER', ...EXPENSE_CATEGORIES].map(cat => (
                   <button
                     key={cat}
                     type="button"

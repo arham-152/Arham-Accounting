@@ -619,7 +619,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         </div>
       </div>
 
-      {showSummary && ledgerModeCategory && ledgerSummary.length > 0 && (
+      {showSummary && ledgerModeCategory && (
         <div className="animate-in fade-in slide-in-from-top-4 duration-500 pt-6 border-t border-border-main/50">
           <div className="mb-6 px-2 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-5">
             <div className="flex flex-col gap-1">
@@ -686,98 +686,113 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-12">
-            {ledgerSummary.map((item) => (
-              <div 
-                key={item.name} 
-                className={cn(
-                  "dashboard-card group hover:border-accent-gold/40 transition-all relative",
-                  activeNoteSr === item.recentSr ? "z-[60]" : "z-10 hover:z-20"
-                )}
-              >
-                {/* Copy Feedback Overlay - uses internal rounding to allow overflow of notes */}
-                <AnimatePresence>
-                  {copySuccessSr === item.recentSr && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute inset-0 bg-accent-gold/90 flex items-center justify-center z-30 rounded-[inherit]"
-                    >
-                      <span className="text-black font-black text-xs uppercase tracking-widest">History Copied!</span>
-                    </motion.div>
+          {ledgerSummary.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-12">
+              {ledgerSummary.map((item) => (
+                <div 
+                  key={item.name} 
+                  className={cn(
+                    "dashboard-card group hover:border-accent-gold/40 transition-all relative",
+                    activeNoteSr === item.recentSr ? "z-[60]" : "z-10 hover:z-20"
                   )}
-                </AnimatePresence>
-
-                <div className="flex justify-between items-center h-full">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                       <div 
-                         className="relative group/sr"
-                         onClick={(e) => {
-                           e.stopPropagation();
-                           setActiveNoteSr(activeNoteSr === item.recentSr ? null : item.recentSr);
-                         }}
-                       >
-                          <span className={cn(
-                            "text-[10px] text-text-muted transition-colors cursor-help border-b border-dotted border-text-muted/30 hover:text-accent-gold hover:border-accent-gold",
-                            activeNoteSr === item.recentSr ? "text-accent-gold border-accent-gold" : ""
-                          )}>
-                            ({item.recentSr}#)
-                          </span>
-                          {/* Hover/Touch Pop-up for Notes */}
-                          <div className={cn(
-                            "absolute bottom-full left-0 mb-3 w-64 p-4 bg-surface-brightest border border-border-main rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all z-[70] pointer-events-none",
-                            (activeNoteSr === item.recentSr) 
-                              ? "opacity-100 visible translate-y-0" 
-                              : "opacity-0 invisible translate-y-1 sm:group-hover/sr:opacity-100 sm:group-hover/sr:visible sm:group-hover/sr:translate-y-0"
-                          )}>
-                             <div className="flex items-center justify-between mb-3">
-                               <span className="text-[10px] uppercase font-bold text-accent-gold tracking-[2px]">Last Transaction Notes</span>
-                               <span className="text-[9px] font-mono text-text-muted bg-surface p-1 rounded border border-border-main">SR: {item.recentSr}</span>
-                             </div>
-                             <p className="text-[12px] text-text-primary italic leading-relaxed font-medium">
-                               {item.recentNotes || "No notes available for this entry."}
-                             </p>
-                             <div className="mt-3 pt-3 border-t border-border-main/50 flex justify-between items-center">
-                                <span className="text-[8px] text-text-muted uppercase font-bold">Quick View</span>
-                                <span className="text-[8px] text-accent-gold/70 uppercase tracking-tighter">Tap serial again to close</span>
-                             </div>
-                          </div>
-                       </div>
-                       <span 
-                         onClick={() => handleCopyHistory(item.name, item.recentSr)}
-                         className="font-bold text-sm tracking-tight hover:text-accent-gold transition-colors cursor-pointer underline decoration-accent-gold/20 underline-offset-4 decoration-dotted truncate max-w-[120px] sm:max-w-none"
-                         title="Click to copy full history"
-                       >
-                         {item.name}
-                       </span>
+                >
+                  {/* Copy Feedback Overlay */}
+                  <AnimatePresence>
+                    {copySuccessSr === item.recentSr && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute inset-0 bg-accent-gold/90 flex items-center justify-center z-30 rounded-[inherit]"
+                      >
+                        <span className="text-black font-black text-xs uppercase tracking-widest">History Copied!</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+  
+                  <div className="flex justify-between items-center h-full">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                         <div 
+                           className="relative group/sr"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             setActiveNoteSr(activeNoteSr === item.recentSr ? null : item.recentSr);
+                           }}
+                         >
+                            <span className={cn(
+                              "text-[10px] text-text-muted transition-colors cursor-help border-b border-dotted border-text-muted/30 hover:text-accent-gold hover:border-accent-gold",
+                              activeNoteSr === item.recentSr ? "text-accent-gold border-accent-gold" : ""
+                            )}>
+                              ({item.recentSr}#)
+                            </span>
+                            {/* Hover/Touch Pop-up for Notes */}
+                            <div className={cn(
+                              "absolute bottom-full left-0 mb-3 w-64 p-4 bg-surface-brightest border border-border-main rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all z-[70] pointer-events-none",
+                              (activeNoteSr === item.recentSr) 
+                                ? "opacity-100 visible translate-y-0" 
+                                : "opacity-0 invisible translate-y-1 sm:group-hover/sr:opacity-100 sm:group-hover/sr:visible sm:group-hover/sr:translate-y-0"
+                            )}>
+                               <div className="flex items-center justify-between mb-3">
+                                 <span className="text-[10px] uppercase font-bold text-accent-gold tracking-[2px]">Last Transaction Notes</span>
+                                 <span className="text-[9px] font-mono text-text-muted bg-surface p-1 rounded border border-border-main">SR: {item.recentSr}</span>
+                               </div>
+                               <p className="text-[12px] text-text-primary italic leading-relaxed font-medium">
+                                 {item.recentNotes || "No notes available for this entry."}
+                               </p>
+                               <div className="mt-3 pt-3 border-t border-border-main/50 flex justify-between items-center">
+                                  <span className="text-[8px] text-text-muted uppercase font-bold">Quick View</span>
+                                  <span className="text-[8px] text-accent-gold/70 uppercase tracking-tighter">Tap serial again to close</span>
+                               </div>
+                            </div>
+                         </div>
+                         <span 
+                           onClick={() => handleCopyHistory(item.name, item.recentSr)}
+                           className="font-bold text-sm tracking-tight hover:text-accent-gold transition-colors cursor-pointer underline decoration-accent-gold/20 underline-offset-4 decoration-dotted truncate max-w-[120px] sm:max-w-none"
+                           title="Click to copy full history"
+                         >
+                           {item.name}
+                         </span>
+                      </div>
+                      <span className="text-[10px] text-text-muted font-mono">
+                        {ledgerModeCategory === 'BORROW' ? 'Activity' : 'Volume'}: <span className="text-text-secondary">₨ {item.totalActivity.toLocaleString()}</span>
+                      </span>
                     </div>
-                    <span className="text-[10px] text-text-muted font-mono">
-                      {ledgerModeCategory === 'BORROW' ? 'Activity' : 'Volume'}: <span className="text-text-secondary">₨ {item.totalActivity.toLocaleString()}</span>
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className={cn(
-                      "text-[10px] font-black uppercase tracking-[2px] mb-1",
-                      item.balance > 0 ? "text-income" : item.balance < 0 ? "text-expense" : "text-text-muted"
-                    )}>
-                      {ledgerModeCategory === 'BORROW' 
-                        ? (item.balance > 0 ? 'GETS' : item.balance < 0 ? 'OWES' : 'CLEAR')
-                        : (item.balance > 0 ? 'INCOME' : 'EXPENSE')
-                      }
-                    </span>
-                    <span className={cn(
-                      "text-sm font-mono font-bold",
-                      item.balance > 0 ? "text-income" : item.balance < 0 ? "text-expense" : "text-text-muted"
-                    )}>
-                      Rs {Math.abs(item.balance).toLocaleString()}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-[2px] mb-1",
+                        item.balance > 0 ? "text-income" : item.balance < 0 ? "text-expense" : "text-text-muted"
+                      )}>
+                        {ledgerModeCategory === 'BORROW' 
+                          ? (item.balance > 0 ? 'GETS' : item.balance < 0 ? 'OWES' : 'CLEAR')
+                          : (item.balance > 0 ? 'INCOME' : 'EXPENSE')
+                        }
+                      </span>
+                      <span className={cn(
+                        "text-sm font-mono font-bold",
+                        item.balance > 0 ? "text-income" : item.balance < 0 ? "text-expense" : "text-text-muted"
+                      )}>
+                        Rs {Math.abs(item.balance).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 flex flex-col items-center justify-center bg-surface-brighter border border-border-main rounded-3xl mb-12">
+               <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center text-text-muted mb-4">
+                  <Search size={32} />
+               </div>
+               <p className="text-xs font-bold text-text-muted uppercase tracking-widest">No entries found for current filter</p>
+               <button 
+                 onClick={() => setBorrowFilter('all')}
+                 className="mt-4 px-6 py-2 bg-accent-gold text-black text-[10px] font-black uppercase tracking-widest rounded-lg"
+               >
+                 View All Entries
+               </button>
+            </div>
+          )}
         </div>
       )}
 
