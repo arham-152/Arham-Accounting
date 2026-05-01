@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Save, Calendar, Tag, CreditCard, Landmark, FileText, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Save, Calendar, Tag, CreditCard, Landmark, FileText, Loader2, Star, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { EXPENSE_CATEGORIES, MONTH_NAMES } from '../types';
@@ -12,6 +12,7 @@ interface AddTransactionModalProps {
 
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     name: '',
@@ -22,6 +23,55 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
     to: 'CASH',
     notes: ''
   });
+
+  // Load templates from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('arham_ledger_templates');
+    if (saved) {
+      try {
+        setTemplates(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to load templates", e);
+      }
+    }
+  }, [isOpen]);
+
+  const saveTemplate = () => {
+    if (!formData.name || !formData.amount) return;
+    const newTemplate = {
+      id: Date.now(),
+      name: formData.name,
+      amount: formData.amount,
+      category: formData.category,
+      type: formData.type,
+      from: formData.from,
+      to: formData.to,
+      notes: formData.notes
+    };
+    const updated = [newTemplate, ...templates].slice(0, 8); // Keep last 8
+    setTemplates(updated);
+    localStorage.setItem('arham_ledger_templates', JSON.stringify(updated));
+  };
+
+  const deleteTemplate = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = templates.filter(t => t.id !== id);
+    setTemplates(updated);
+    localStorage.setItem('arham_ledger_templates', JSON.stringify(updated));
+  };
+
+  const applyTemplate = (template: any) => {
+    setFormData(prev => ({
+      ...prev,
+      name: template.name,
+      amount: template.amount,
+      category: template.category,
+      type: template.type,
+      from: template.from,
+      to: template.to,
+      notes: template.notes || ''
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,164 +123,206 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
-            {/* Amount - The Hero Input */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Amount (PKR)</label>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-accent-gold opacity-50">₨</div>
-                <input 
-                  type="number" 
-                  step="any"
-                  value={formData.amount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                  required
-                  placeholder="0.00"
-                  className="w-full bg-surface-brighter border-2 border-border-main focus:border-accent-gold rounded-2xl py-5 pl-12 pr-6 outline-none text-3xl font-display font-black transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Reference Name */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Reference / Person</label>
-              <div className="relative">
-                <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
-                <input 
-                  type="text" 
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  required
-                  placeholder="Who or What? (e.g. Aslam, Fuel, Grocery)"
-                  className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl py-3 pl-12 pr-4 outline-none text-sm transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Type Dropdown */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Entry Type</label>
-                <div className="relative">
-                  <select
-                    value={formData.type}
-                    onChange={(e) => {
-                      const newType = e.target.value;
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        type: newType,
-                        category: newType === 'TRANSFER' ? 'TRANSFER' : prev.category
-                      }));
-                    }}
-                    className={cn(
-                      "w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none transition-all",
-                      formData.type === 'DEBIT' && "text-income border-income/30",
-                      formData.type === 'CREDIT' && "text-expense border-expense/30",
-                      formData.type === 'TRANSFER' && "text-accent-gold border-accent-gold/30"
-                    )}
-                  >
-                    <option value="DEBIT">INCOME (DEBIT)</option>
-                    <option value="CREDIT">EXPENSE (CREDIT)</option>
-                    <option value="TRANSFER">TRANSFER</option>
-                  </select>
+          <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+            {/* Quick Templates Section */}
+            {templates.length > 0 && (
+              <div className="space-y-2 mb-2">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-accent-gold">Quick Templates</label>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                  {templates.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => applyTemplate(t)}
+                      className="flex-shrink-0 px-4 py-2 bg-surface-brighter border border-border-main rounded-xl flex items-center gap-2 hover:border-accent-gold group transition-all"
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-[10px] font-bold text-text-primary truncate max-w-[80px]">{t.name}</span>
+                        <span className="text-[8px] font-mono text-text-muted">₨{t.amount}</span>
+                      </div>
+                      <div 
+                        onClick={(e) => deleteTemplate(t.id, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-expense transition-opacity"
+                      >
+                        <Trash2 size={10} />
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Date */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Amount - The Hero Input */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Date</label>
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Amount (PKR)</label>
                 <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-accent-gold opacity-50">₨</div>
                   <input 
-                    type="date" 
-                    value={formData.date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                    className="w-full bg-surface-brighter border border-border-main rounded-xl py-2.5 pl-9 pr-3 outline-none text-xs font-bold focus:border-accent-gold"
+                    type="number" 
+                    step="any"
+                    value={formData.amount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                    required
+                    placeholder="0.00"
+                    className="w-full bg-surface-brighter border-2 border-border-main focus:border-accent-gold rounded-2xl py-5 pl-12 pr-6 outline-none text-3xl font-display font-black transition-all"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Channels */}
-            <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-2">
-                 <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">From (Source)</label>
-                 <select 
-                   value={formData.from}
-                   onChange={(e) => setFormData(prev => ({ ...prev, from: e.target.value }))}
-                   className="w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none"
-                 >
-                   <option value="CASH">CASH</option>
-                   <option value="Jazz-Cash">JAZZ-CASH</option>
-                   <option value="BANK">BANK</option>
-                   <option value="OTHER">OTHER</option>
-                 </select>
-               </div>
-               <div className="space-y-2">
-                 <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">To (Target)</label>
-                 <select 
-                   value={formData.to}
-                   onChange={(e) => setFormData(prev => ({ ...prev, to: e.target.value }))}
-                   className="w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none"
-                 >
-                   <option value="CASH">CASH</option>
-                   <option value="Jazz-Cash">JAZZ-CASH</option>
-                   <option value="BANK">BANK</option>
-                   <option value="OTHER">OTHER (Expense)</option>
-                 </select>
-               </div>
-            </div>
-
-            {/* Category */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Category</label>
-              <div className="flex flex-wrap gap-2">
-                {['SALARY', 'INCOME', 'BORROW', 'SAVING', 'TRANSFER', ...EXPENSE_CATEGORIES].map(cat => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, category: cat }))}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-[10px] font-bold border transition-all",
-                      formData.category === cat 
-                        ? "bg-accent-gold/10 border-accent-gold text-accent-gold" 
-                        : "bg-surface-brighter border-border-main text-text-muted hover:border-text-muted"
-                    )}
-                  >
-                    {cat}
-                  </button>
-                ))}
+              {/* Reference Name */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Reference / Person</label>
+                <div className="relative">
+                  <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <input 
+                    type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                    placeholder="Who or What? (e.g. Aslam, Fuel, Grocery)"
+                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl py-3 pl-12 pr-4 outline-none text-sm transition-all"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Special Notes</label>
-              <textarea 
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Optional notes or details..."
-                rows={2}
-                className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl p-4 outline-none text-sm transition-all resize-none"
-              />
-            </div>
-          </form>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Type Dropdown */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Entry Type</label>
+                  <div className="relative">
+                    <select
+                      value={formData.type}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          type: newType,
+                          category: newType === 'TRANSFER' ? 'TRANSFER' : prev.category
+                        }));
+                      }}
+                      className={cn(
+                        "w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none transition-all",
+                        formData.type === 'DEBIT' && "text-income border-income/30",
+                        formData.type === 'CREDIT' && "text-expense border-expense/30",
+                        formData.type === 'TRANSFER' && "text-accent-gold border-accent-gold/30"
+                      )}
+                    >
+                      <option value="DEBIT">INCOME (DEBIT)</option>
+                      <option value="CREDIT">EXPENSE (CREDIT)</option>
+                      <option value="TRANSFER">TRANSFER</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Date</label>
+                  <div className="relative">
+                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                    <input 
+                      type="date" 
+                      value={formData.date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full bg-surface-brighter border border-border-main rounded-xl py-2.5 pl-9 pr-3 outline-none text-xs font-bold focus:border-accent-gold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Channels */}
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">From (Source)</label>
+                   <select 
+                     value={formData.from}
+                     onChange={(e) => setFormData(prev => ({ ...prev, from: e.target.value }))}
+                     className="w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none"
+                   >
+                     <option value="CASH">CASH</option>
+                     <option value="Jazz-Cash">JAZZ-CASH</option>
+                     <option value="BANK">BANK</option>
+                     <option value="OTHER">OTHER</option>
+                   </select>
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">To (Target)</label>
+                   <select 
+                     value={formData.to}
+                     onChange={(e) => setFormData(prev => ({ ...prev, to: e.target.value }))}
+                     className="w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none"
+                   >
+                     <option value="CASH">CASH</option>
+                     <option value="Jazz-Cash">JAZZ-CASH</option>
+                     <option value="BANK">BANK</option>
+                     <option value="OTHER">OTHER (Expense)</option>
+                   </select>
+                 </div>
+              </div>
+
+              {/* Category */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Category</label>
+                <div className="flex flex-wrap gap-2">
+                  {['SALARY', 'INCOME', 'BORROW', 'SAVING', 'TRANSFER', ...EXPENSE_CATEGORIES].map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, category: cat }))}
+                      className={cn(
+                        "px-3 py-2 rounded-lg text-[10px] font-bold border transition-all",
+                        formData.category === cat 
+                          ? "bg-accent-gold/10 border-accent-gold text-accent-gold" 
+                          : "bg-surface-brighter border-border-main text-text-muted hover:border-text-muted"
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Special Notes</label>
+                <textarea 
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Optional notes or details..."
+                  rows={2}
+                  className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl p-4 outline-none text-sm transition-all resize-none"
+                />
+              </div>
+            </form>
+          </div>
 
           {/* Footer Actions */}
-          <div className="p-6 bg-surface-brighter border-t border-border-main flex gap-3">
-             <button
-               type="button"
-               onClick={onClose}
-               className="flex-1 py-4 text-[10px] font-black uppercase tracking-[2px] text-text-muted hover:text-text-primary transition-colors"
-             >
-               Cancel
-             </button>
+          <div className="p-6 bg-surface-brighter border-t border-border-main flex flex-col gap-3">
+             <div className="flex gap-3">
+               <button
+                 type="button"
+                 onClick={saveTemplate}
+                 disabled={!formData.name || !formData.amount}
+                 className="flex-1 py-3 bg-surface border border-border-main text-[9px] font-black uppercase tracking-[1px] text-text-muted hover:border-accent-gold hover:text-accent-gold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+               >
+                 <Star size={12} />
+                 Save Template
+               </button>
+               <button
+                 type="button"
+                 onClick={onClose}
+                 className="flex-1 py-3 text-[9px] font-black uppercase tracking-[1px] text-text-muted hover:text-text-primary transition-colors"
+               >
+                 Cancel
+               </button>
+             </div>
+             
              <button
                onClick={handleSubmit}
                disabled={loading || !formData.name || !formData.amount}
                className={cn(
-                 "flex-[2] py-4 bg-accent-gold text-black rounded-2xl text-[10px] font-black uppercase tracking-[2px] shadow-xl transition-all flex items-center justify-center gap-2",
-                 (loading || !formData.name || !formData.amount) ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02] active:scale-95"
+                 "w-full py-4 bg-accent-gold text-black rounded-2xl text-[10px] font-black uppercase tracking-[2px] shadow-xl transition-all flex items-center justify-center gap-2",
+                 (loading || !formData.name || !formData.amount) ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.01] active:scale-95"
                )}
              >
                {loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}

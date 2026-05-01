@@ -277,7 +277,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
     datasets: [
       {
         label: 'Monthly Income',
-        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0)),
+        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.type === 'DEBIT' && ['SALARY', 'INCOME', 'INCOM'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0)),
         borderColor: '#22c55e',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         fill: true,
@@ -306,7 +306,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
     datasets: [
       {
         label: 'Income',
-        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0)),
+        data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.type === 'DEBIT' && ['SALARY', 'INCOME', 'INCOM'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0)),
         backgroundColor: '#22c55e',
         borderRadius: 4,
       },
@@ -427,7 +427,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
     const years = [...new Set(allTransactions.map(t => t.year))].sort();
     return years.map(year => {
       const yearTxns = allTransactions.filter(t => t.year === year);
-      const income = yearTxns.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
+      const income = yearTxns.filter(t => t.type === 'DEBIT' && ['SALARY', 'INCOME', 'INCOM'].includes((t.category || '').toUpperCase())).reduce((s, t) => s + t.amount, 0);
       const expense = yearTxns.filter(t => t.type === 'CREDIT' && t.category !== 'BORROW').reduce((s, t) => s + t.amount, 0);
       return { year, income, expense };
     });
@@ -581,12 +581,12 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
           data={{
             labels: ['Cash Exp', 'Jazz Exp', 'Cash Inc', 'Jazz Inc'],
             datasets: [{
-              data: [
-                transactions.filter(r => r.from === 'CASH' && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0),
-                transactions.filter(r => r.from === 'Jazz-Cash' && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0),
-                transactions.filter(r => r.from === 'CASH' && r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0),
-                transactions.filter(r => r.from === 'Jazz-Cash' && r.type === 'DEBIT').reduce((s, r) => s + r.amount, 0),
-              ],
+                data: [
+                  transactions.filter(r => r.from === 'CASH' && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0),
+                  transactions.filter(r => r.from === 'Jazz-Cash' && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0),
+                  transactions.filter(r => r.from === 'CASH' && r.type === 'DEBIT' && ['SALARY', 'INCOME', 'INCOM'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0),
+                  transactions.filter(r => r.from === 'Jazz-Cash' && r.type === 'DEBIT' && ['SALARY', 'INCOME', 'INCOM'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0),
+                ],
               backgroundColor: ['#ef444455', '#f0b42955', '#22c55e55', '#4ecdc455'],
               borderColor: ['#ef4444', '#f0b429', '#22c55e', '#4ecdc4'],
               borderWidth: 1.5
@@ -666,6 +666,8 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
       .slice(0, 15);
 
+    const reversedTimeline = [...timeline].reverse();
+
     return (
       <div className="flex flex-col gap-8 pb-6">
         {borrowEntries.length > 0 && (
@@ -707,11 +709,16 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map(cat => {
+            const chartData = reversedTimeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.category === cat && r.type === 'CREDIT').reduce((s, t) => s + t.amount, 0));
+            const hasData = chartData.some(val => val > 0);
+            
+            if (!hasData) return null;
+
             const data = {
-              labels: timeline.map(t => t.label),
+              labels: reversedTimeline.map(t => t.label),
               datasets: [{
                 label: cat,
-                data: timeline.map(t => transactions.filter(r => r.month === t.month && r.year === t.year && r.category === cat && r.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)),
+                data: chartData,
                 backgroundColor: (CATEGORY_COLORS[cat] || '#6b7280') + 'bb',
                 borderColor: CATEGORY_COLORS[cat] || '#6b7280',
                 borderWidth: 1,
@@ -734,9 +741,15 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
 
   const renderMonthlyBreakdown = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
-      {timeline.map(t => {
+      {[...timeline].reverse().map(t => {
         const monthTransactions = transactions.filter(r => r.month === t.month && r.year === t.year);
-        const monthCats = [...new Set(monthTransactions.map(t => t.category))].filter((c): c is string => Boolean(c));
+        // Only include categories that actually have a positive expense total in this month
+        const monthCats = [...new Set(monthTransactions.map(t => t.category))]
+          .filter((c): c is string => Boolean(c))
+          .filter(c => monthTransactions.filter(r => r.category === c && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0) > 0);
+        
+        if (monthCats.length === 0) return null;
+
         const data = {
           labels: monthCats.map(c => c.length > 8 ? c.slice(0, 6) + '..' : c),
           datasets: [{

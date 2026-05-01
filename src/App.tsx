@@ -7,6 +7,7 @@ import { KPICard } from './components/KPICard';
 import { Charts } from './components/Charts';
 import { AnalysisPanels } from './components/AnalysisPanels';
 import { BudgetSection } from './components/BudgetSection';
+import { FinancialInsights } from './components/FinancialInsights';
 import { TransactionTable } from './components/TransactionTable';
 import { WealthTracker, Asset } from './components/WealthTracker';
 import { SavingsGoals, SavingsGoal } from './components/SavingsGoals';
@@ -100,7 +101,9 @@ export default function App() {
     category: '',
     type: '',
     channel: '',
-    search: ''
+    search: '',
+    startDate: '',
+    endDate: ''
   });
 
   const [budgets, setBudgets] = useState<Record<string, number>>(() => {
@@ -294,6 +297,8 @@ export default function App() {
       if (filters.year && r.year !== filters.year) return false;
       if (filters.category && r.category !== filters.category) return false;
       if (filters.type && r.type !== filters.type) return false;
+      if (filters.startDate && r.date < filters.startDate) return false;
+      if (filters.endDate && r.date > filters.endDate) return false;
       if (filters.channel) {
         if (filters.channel === 'CASH' && r.from !== 'CASH') return false;
         if (filters.channel === 'Jazz-Cash' && r.from !== 'Jazz-Cash') return false;
@@ -306,7 +311,7 @@ export default function App() {
   const categories = useMemo(() => [...new Set(allData.map(r => r.category))].filter(Boolean), [allData]);
 
   const kpis = useMemo(() => {
-    const income = filteredData.filter(r => r.type === 'DEBIT' && (['SALARY', 'INCOM', 'INCOME'].includes((r.category || '').toUpperCase()) || (r.category || '').toUpperCase() === 'MISLINIUS')).reduce((s, r) => s + r.amount, 0);
+    const income = filteredData.filter(r => r.type === 'DEBIT' && ['SALARY', 'INCOME', 'INCOM'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0);
     const expense = filteredData.filter(r => r.type === 'CREDIT' && !['BORROW', 'TRANSFER', 'SAVING'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0);
     
     // Just sum of "borrow" amount as requested
@@ -587,7 +592,7 @@ export default function App() {
                 filters={filters}
                 categories={categories}
                 setFilters={setFilters}
-                resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '' })}
+                resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '', startDate: '', endDate: '' })}
               />
             </motion.div>
           )}
@@ -702,6 +707,15 @@ export default function App() {
                   </>
                 )}
               </div>
+            </section>
+
+            {/* Financial Insights */}
+            <section className="animate-in fade-in slide-in-from-bottom-2 duration-700 delay-100">
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Mobile Balance Insights</h2>
+                <div className="flex-1 h-px bg-border-main" />
+              </div>
+              <FinancialInsights transactions={allData} budgets={budgets} />
             </section>
 
             {/* Charts Section */}
