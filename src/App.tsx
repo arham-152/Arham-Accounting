@@ -617,8 +617,8 @@ export default function App() {
       )}
 
       <main className={cn(
-        "flex-1 max-w-[1600px] mx-auto w-full p-6 transition-all duration-500 pb-32",
-        currentView === 'register' ? "flex flex-col gap-2 pt-2 px-4 lg:px-8" : "flex flex-col gap-8"
+        "flex-1 mx-auto w-full p-4 sm:p-6 transition-all duration-500 pb-32",
+        currentView === 'register' ? "flex flex-col gap-2 pt-2 px-3 sm:px-4 lg:px-12 max-w-none" : "flex flex-col gap-8 max-w-[1920px]"
       )}>
         {currentView === 'dashboard' && (
           <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
