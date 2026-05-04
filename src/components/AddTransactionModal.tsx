@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Calendar, Tag, CreditCard, Landmark, FileText, Loader2, Star, Trash2 } from 'lucide-react';
+import { X, Save, Calendar, Tag, CreditCard, Landmark, FileText, Loader2, Star, Trash2, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { EXPENSE_CATEGORIES, MONTH_NAMES } from '../types';
+import { EXPENSE_CATEGORIES, MONTH_NAMES, Transaction } from '../types';
 
 interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => Promise<boolean>;
+  transactions: Transaction[];
 }
 
-export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onSubmit }) => {
+export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onSubmit, transactions }) => {
   const [loading, setLoading] = useState(false);
+  const [searchSr, setSearchSr] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
   const [formData, setFormData] = useState({
+    sr: '',
     date: new Date().toISOString().split('T')[0],
     name: '',
     amount: '',
@@ -24,15 +28,32 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
     notes: ''
   });
 
-  // Load templates from localStorage
+  // Load templates from localStorage and handle modal state reset
   useEffect(() => {
-    const saved = localStorage.getItem('arham_ledger_templates');
-    if (saved) {
-      try {
-        setTemplates(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to load templates", e);
+    if (isOpen) {
+      const saved = localStorage.getItem('arham_ledger_templates');
+      if (saved) {
+        try {
+          setTemplates(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to load templates", e);
+        }
       }
+    } else {
+      // Clear data when modal closes
+      setFormData({
+        sr: '',
+        date: new Date().toISOString().split('T')[0],
+        name: '',
+        amount: '',
+        category: 'MISLINIUS',
+        type: 'CREDIT',
+        from: 'CASH',
+        to: 'CASH',
+        notes: ''
+      });
+      setIsEditing(false);
+      setSearchSr('');
     }
   }, [isOpen]);
 
@@ -61,8 +82,10 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
   };
 
   const applyTemplate = (template: any) => {
+    setIsEditing(false);
     setFormData(prev => ({
       ...prev,
+      sr: '',
       name: template.name,
       amount: template.amount,
       category: template.category,
@@ -71,6 +94,27 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
       to: template.to,
       notes: template.notes || ''
     }));
+  };
+
+  const handleFetchSr = () => {
+    if (!searchSr) return;
+    const found = transactions.find(t => String(t.sr) === searchSr);
+    if (found) {
+      setIsEditing(true);
+      setFormData({
+        sr: String(found.sr),
+        date: found.rawDate || found.date, // Try to keep raw date format if available
+        name: found.name,
+        amount: String(found.amount),
+        category: found.category || 'MISLINIUS',
+        type: found.type,
+        from: found.from,
+        to: found.to,
+        notes: found.notes || ''
+      });
+    } else {
+      alert(`Transaction with SR #${searchSr} not found.`);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,6 +127,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
     
     if (success) {
       setFormData({
+        sr: '',
         date: new Date().toISOString().split('T')[0],
         name: '',
         amount: '',
@@ -92,6 +137,8 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
         to: 'CASH',
         notes: ''
       });
+      setIsEditing(false);
+      setSearchSr('');
       onClose();
     }
   };
@@ -113,7 +160,10 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
               <div className="w-10 h-10 rounded-xl bg-accent-gold/10 flex items-center justify-center text-accent-gold">
                 <CreditCard size={20} />
               </div>
-              <h3 className="text-xl font-display font-black tracking-tight">Record Entry</h3>
+              <div className="flex flex-col">
+                <h3 className="text-xl font-display font-black tracking-tight">{isEditing ? 'Update Entry' : 'Record Entry'}</h3>
+                {isEditing && <span className="text-[9px] font-bold text-accent-gold uppercase tracking-widest leading-none">Editing SR #{formData.sr}</span>}
+              </div>
             </div>
             <button 
               onClick={onClose}
@@ -124,6 +174,54 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+            {/* SR Search Section */}
+            <div className="p-4 bg-surface-brightest border border-border-main rounded-2xl space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[2px] text-accent-gold">Fetch Old Record (Quick Edit)</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <input 
+                    type="number"
+                    placeholder="Enter SR Number..."
+                    value={searchSr}
+                    onChange={(e) => setSearchSr(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleFetchSr())}
+                    className="w-full bg-surface border border-border-main rounded-xl py-2 pl-9 pr-3 text-xs font-mono outline-none focus:border-accent-gold transition-all"
+                  />
+                </div>
+                <button 
+                  type="button"
+                  onClick={handleFetchSr}
+                  className="px-4 py-2 bg-accent-gold text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+                >
+                  Fetch
+                </button>
+                {isEditing && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setSearchSr('');
+                      setFormData({
+                        sr: '',
+                        date: new Date().toISOString().split('T')[0],
+                        name: '',
+                        amount: '',
+                        category: 'MISLINIUS',
+                        type: 'CREDIT',
+                        from: 'CASH',
+                        to: 'CASH',
+                        notes: ''
+                      });
+                    }}
+                    className="px-4 py-2 bg-surface text-text-muted hover:text-expense border border-border-main rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Quick Templates Section */}
             {templates.length > 0 && (
               <div className="space-y-2 mb-2">
@@ -322,11 +420,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                disabled={loading || !formData.name || !formData.amount}
                className={cn(
                  "w-full py-4 bg-accent-gold text-black rounded-2xl text-[10px] font-black uppercase tracking-[2px] shadow-xl transition-all flex items-center justify-center gap-2",
-                 (loading || !formData.name || !formData.amount) ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.01] active:scale-95"
+                 (loading || !formData.name || !formData.amount) ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.01] active:scale-95",
+                 isEditing && "bg-income"
                )}
              >
-               {loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-               {loading ? 'Submitting...' : 'Confirm Entry'}
+               {loading ? <Loader2 className="animate-spin" size={16} /> : (isEditing ? <Save className="text-black" size={16} /> : <Save size={16} />)}
+               {loading ? 'Submitting...' : (isEditing ? 'Update Entry' : 'Confirm Entry')}
              </button>
           </div>
         </motion.div>
