@@ -2,7 +2,7 @@ import { EXPENSE_CATEGORIES } from "../types";
 
 export async function suggestCategory(name: string, notes: string): Promise<string> {
   try {
-    const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
+    const apiKey = (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : null) || (import.meta as any).env?.VITE_GEMINI_API_KEY;
     if (!apiKey) return "MISLINIUS";
 
     const prompt = `Based on the transaction name "${name}" and notes "${notes}", suggest the best category from this list: ${EXPENSE_CATEGORIES.join(', ')}. Return only the category name in plain text.`;
@@ -31,7 +31,7 @@ export async function suggestCategory(name: string, notes: string): Promise<stri
 
 export async function batchCategorize(transactions: { name: string; notes: string; id: number }[]) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
+    const apiKey = (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : null) || (import.meta as any).env?.VITE_GEMINI_API_KEY;
     if (!apiKey) return [];
 
     const list = transactions.map(t => `ID ${t.id}: Name="${t.name}", Notes="${t.notes}"`).join('\n');

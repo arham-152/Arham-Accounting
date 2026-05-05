@@ -180,8 +180,25 @@ export default function App() {
   }, [savingsGoals]);
 
   useEffect(() => {
-    // Initial delay for entrance animation
-    const timer = setTimeout(() => setIsReady(true), 600);
+    // Initial delay for entrance animation and data loading
+    const timer = setTimeout(() => {
+      setIsReady(true);
+      console.log("[System] App is now ready.");
+    }, 1200);
+
+    const initData = async () => {
+      if (csvUrl && dataSource === 'live') {
+        try {
+          await syncFinancialData(csvUrl);
+        } catch (e) {
+          console.error("Initial sync failed, using cached data.", e);
+        } finally {
+          setIsReady(true);
+        }
+      }
+    };
+
+    initData();
     return () => clearTimeout(timer);
   }, []);
 
@@ -319,7 +336,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (csvUrl) {
+    // Sync when CSV URL is manually updated by user
+    // (Actual initial boot sync is handled in the main startup effect)
+    if (csvUrl && dataSource === 'live' && isReady) {
       syncFinancialData(csvUrl);
     }
   }, [csvUrl]);

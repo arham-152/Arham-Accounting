@@ -47,7 +47,9 @@ export const AIChat: React.FC<AIChatProps> = ({ transactions, isDarkMode }) => {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : null) || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API Key not found");
+      const ai = new GoogleGenAI(apiKey);
       
       // Prepare simplified data context for Gemini
       const dataContext = transactions.map(t => ({
