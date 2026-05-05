@@ -11,64 +11,53 @@
     <link rel="apple-touch-icon" href="/logo-app.png" />
     <title>Account</title>
     <script>
+      // Protection for the read-only 'fetch' property in AI Studio/Sandboxed environments
       (function() {
-        // 1. Fetch protection (Immediate)
-        var _fetch = window.fetch;
-        try {
-          Object.defineProperty(window, 'fetch', {
-            get: function() { return window.__m || _fetch; },
-            set: function(v) { window.__m = v; },
-            configurable: true,
-            enumerable: true
-          });
-        } catch (e) {
-          console.debug("Fetch lock active");
-        }
-
-        // 2. Storage protection
-        try {
-          localStorage.setItem('i', '1');
-          localStorage.removeItem('i');
-        } catch (e) {
-          var _s = {};
-          var mock = {
-            getItem: function(k) { return _s[k] || null; },
-            setItem: function(k, v) { _s[k] = String(v); },
-            removeItem: function(k) { delete _s[k]; },
-            clear: function() { _s = {}; },
-            key: function(i) { return Object.keys(_s)[i] || null; },
-            get length() { return Object.keys(_s).length; }
-          };
+        if (typeof window.fetch === 'function') {
+          const originalFetch = window.fetch;
           try {
-            window.localStorage = mock;
-          } catch (err) {
-            Object.assign(window.localStorage, mock);
+            // Attempt to define safety property. 
+            // In some hardened environments, this will throw, so we wrap it.
+            if (Object.getOwnPropertyDescriptor(window, 'fetch')?.configurable !== false) {
+              Object.defineProperty(window, 'fetch', {
+                get: function() { return originalFetch; },
+                set: function(v) { 
+                  console.warn("System Intercept: Attempt to overwrite 'fetch' blocked.");
+                },
+                configurable: true,
+                enumerable: true
+              });
+            }
+          } catch (e) {
+            console.debug("Fetch lock not required for this environment.");
           }
         }
       })();
 
-      // 3. App boot monitor
-      window.onerror = function(msg) {
-        var loader = document.getElementById('static-loader');
+      // Global error handler to catch boot crashes
+      window.onerror = function(msg, url, line, col, error) {
+        const loader = document.getElementById('static-loader');
         if (loader) {
-          loader.innerHTML = '<div style="background:#1a0505; color:#ef4444; padding:40px; text-align:center; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif;">' +
-            '<h2 style="margin:0 0 10px 0; font-size:24px;">SYSTEM HALTED</h2>' +
-            '<div style="font-size:10px; color:#94a3b8; margin-bottom:20px; max-width:300px; line-height:1.5;">' + msg + '</div>' +
-            '<button onclick="localStorage.clear(); location.reload();" style="background:#f0b429; color:black; border:none; padding:12px 24px; border-radius:8px; font-weight:bold; cursor:pointer;">FIX & RESTART</button>' +
-          '</div>';
+          loader.style.backgroundColor = '#1a0505';
+          const text = loader.querySelector('.static-text');
+          if (text) {
+            text.innerHTML = 'BOOT ERROR: ' + (msg || 'Unknown failure') + '<br><br><button onclick="localStorage.clear(); location.reload();" style="background:#f0b429; color:black; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">FORCE RESTART</button>';
+            text.style.color = '#ef4444';
+            text.style.letterSpacing = '0';
+          }
         }
       };
 
-      setTimeout(function() {
-        if (document.getElementById('static-loader')) {
-          var scripts = Array.from(document.scripts);
-          for(var i=0; i<scripts.length; i++) {
-            if (scripts[i].src && scripts[i].src.indexOf('.tsx') !== -1) {
-              window.onerror("ERROR: You uploaded SOURCE code (.tsx) to the server. Please run 'npm run build' and upload the 'dist' folder content.");
-            }
+      // Failsafe: If app doesn't mount in 12s, show escape hatch
+      setTimeout(() => {
+        const loader = document.getElementById('static-loader');
+        if (loader && loader.style.display !== 'none') {
+          const text = loader.querySelector('.static-text');
+          if (text && !text.innerHTML.includes('RESTART')) {
+            text.innerHTML = 'Load taking longer than expected...<br><br><button onclick="location.reload()" style="background:#334155; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">RETRY LOAD</button>';
           }
         }
-      }, 5000);
+      }, 12000);
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

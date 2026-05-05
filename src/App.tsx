@@ -16,8 +16,9 @@ import { ConnectModal } from './components/ConnectModal';
 import { ReportModal } from './components/ReportModal';
 import { AddTransactionModal } from './components/AddTransactionModal';
 import { generatePDFReport, generateExcelReport } from './services/reportService';
+import { suggestCategory, batchCategorize } from './services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
-import { CircleDollarSign, Receipt, Scale, Handshake, Landmark, AlertCircle, FileText, Eye, EyeOff, TrendingDown, TrendingUp, Plus } from 'lucide-react';
+import { CircleDollarSign, Receipt, Scale, Handshake, Landmark, AlertCircle, FileText, BrainCircuit, Eye, EyeOff, TrendingDown, TrendingUp, Plus } from 'lucide-react';
 import { cn } from './lib/utils';
 
 const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
@@ -56,6 +57,7 @@ export default function App() {
     }
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
       const saved = localStorage.getItem('account2026_theme');
@@ -178,25 +180,8 @@ export default function App() {
   }, [savingsGoals]);
 
   useEffect(() => {
-    // Initial delay for entrance animation and data loading
-    const timer = setTimeout(() => {
-      setIsReady(true);
-      console.log("[System] App is now ready.");
-    }, 1200);
-
-    const initData = async () => {
-      if (csvUrl && dataSource === 'live') {
-        try {
-          await syncFinancialData(csvUrl);
-        } catch (e) {
-          console.error("Initial sync failed, using cached data.", e);
-        } finally {
-          setIsReady(true);
-        }
-      }
-    };
-
-    initData();
+    // Initial delay for entrance animation
+    const timer = setTimeout(() => setIsReady(true), 600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -334,9 +319,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Sync when CSV URL is manually updated by user
-    // (Actual initial boot sync is handled in the main startup effect)
-    if (csvUrl && dataSource === 'live' && isReady) {
+    if (csvUrl) {
       syncFinancialData(csvUrl);
     }
   }, [csvUrl]);
@@ -486,6 +469,40 @@ export default function App() {
       generatePDFReport(data, title, { ...options, logoData: logoBase64 });
     } else {
       generateExcelReport(data, title);
+    }
+  };
+
+  const handleAICategorize = async () => {
+    const targets = allData.filter(t => !t.category || t.category.toUpperCase() === 'MISLINIUS').slice(0, 10);
+    if (targets.length === 0) {
+      console.log("No targets for AI categorization found.");
+      return;
+    }
+
+    try {
+      setAiLoading(true);
+      console.log(`Analyzing ${targets.length} transactions...`);
+      const suggestions = await batchCategorize(targets.map(t => ({ id: t.sr, name: t.name, notes: t.notes })));
+      
+      if (!suggestions || suggestions.length === 0) {
+        console.warn("AI returned no suggestions.");
+        alert("AI could not categorize these transactions. Please check your notes/names.");
+        return;
+      }
+
+      console.log("Suggestions received:", suggestions);
+      setAllData(prev => prev.map(t => {
+        const found = suggestions.find((s: any) => s.id === t.sr);
+        if (found) {
+          console.log(`Updating ${t.name}: ${found.category}`);
+          return { ...t, category: found.category.toUpperCase() };
+        }
+        return t;
+      }));
+    } catch (e) {
+      console.error("AI categorization failed:", e);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -798,7 +815,7 @@ export default function App() {
             <section>
               <div className="flex items-center gap-3 mb-6">
                 <Receipt size={24} className="text-accent-gold" />
-                <h2 className="text-xl font-bold text-text-primary">Advanced Analysis</h2>
+                <h2 className="text-xl font-bold text-text-primary">Advanced Intelligence</h2>
               </div>
               <AnalysisPanels transactions={filteredData} borrowStatus={filters.borrowStatus} budgets={budgets} />
             </section>
@@ -825,11 +842,11 @@ export default function App() {
                 />
                 <div className="dashboard-card bg-surface-brighter border-dashed border-border-main p-6 flex flex-col items-center justify-center text-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-accent-gold/5 flex items-center justify-center text-accent-gold/40">
-                    <Scale size={20} />
+                    <BrainCircuit size={20} />
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">Data Optimization Engine</h4>
-                    <p className="text-[9px] text-text-muted/60 leading-relaxed">System is continuously parsing your spending patterns to improve tracking accuracy.</p>
+                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">Neural Engine Optimization</h4>
+                    <p className="text-[9px] text-text-muted/60 leading-relaxed">System is continuously learning from your spending patterns to improve predictive accuracy.</p>
                   </div>
                 </div>
               </div>

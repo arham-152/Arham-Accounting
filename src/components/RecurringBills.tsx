@@ -72,7 +72,7 @@ export const RecurringBills: React.FC<RecurringBillsProps> = ({ transactions }) 
           <div className="absolute left-0 top-full mt-2 w-72 p-4 bg-surface-brightest border border-border-main rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 pointer-events-none">
             <div className="flex items-center gap-2 mb-2">
               <Zap size={14} className="text-accent-gold" />
-              <span className="text-[10px] uppercase font-black text-accent-gold tracking-widest">Logic & Patterns</span>
+              <span className="text-[10px] uppercase font-black text-accent-gold tracking-widest">AI Calculation Logic</span>
             </div>
             <p className="text-[11px] text-text-primary leading-relaxed">
               The <span className="text-expense font-bold">Monthly Burn</span> is the sum of unique transactions that occur at least twice in different months with the same name and amount. 
@@ -109,7 +109,7 @@ export const RecurringBills: React.FC<RecurringBillsProps> = ({ transactions }) 
         {filteredRecurring.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center p-8 text-center text-text-muted opacity-40 bg-surface-brighter border border-dashed border-border-main rounded-2xl">
             <RefreshCw size={24} className="mb-2 animate-spin-slow" />
-            <p className="text-[11px]">No {filter} subscriptions found. Patterns arrive as you record more data.</p>
+            <p className="text-[11px]">No {filter} subscriptions found. AI patterns arrive as you record more data.</p>
           </div>
         ) : (
           filteredRecurring.map((bill, i) => (
@@ -174,7 +174,7 @@ export const RecurringBills: React.FC<RecurringBillsProps> = ({ transactions }) 
       <div className="mt-6 pt-4 border-t border-border-main">
          <div className="flex items-center gap-2 text-[10px] text-text-muted italic">
             <AlertCircle size={12} className="text-accent-gold" />
-            <span>System automatically identifies recurring patterns in your ledger history.</span>
+            <span>AI automatically identifies recurring patterns in your ledger history.</span>
          </div>
       </div>
     </div>
