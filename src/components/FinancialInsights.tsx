@@ -153,12 +153,17 @@ export const FinancialInsights: React.FC<FinancialInsightsProps> = ({ transactio
                 initial={{ opacity: 0, x: '100%' }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: '100%' }}
-                className="absolute inset-0 bg-surface-brightest z-20 p-5 flex flex-col justify-center"
+                onClick={() => setActiveInfo(null)}
+                className="absolute inset-0 bg-surface-brightest z-20 p-5 flex flex-col cursor-pointer"
               >
-                <div className="flex items-center justify-between mb-3 border-b border-border-main/50 pb-2">
+                <div className="flex items-center justify-between mb-4 border-b border-border-main/50 pb-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-accent-gold">Detailed Calculation</span>
+                  <div className="p-1.5 bg-surface rounded-lg text-text-muted">
+                    <X size={12} />
+                  </div>
                 </div>
-                <div className="space-y-3">
+                
+                <div className="flex-1 flex flex-col justify-center space-y-3">
                   {card.calculation.map((calc, i) => (
                     <div key={i} className="flex justify-between items-center">
                       <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">{calc.label}</span>
@@ -168,8 +173,18 @@ export const FinancialInsights: React.FC<FinancialInsightsProps> = ({ transactio
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-3 border-t border-border-main/50 text-center">
+
+                <div className="mt-4 pt-3 border-t border-border-main/50 flex flex-col items-center gap-2">
                   <span className="text-[8px] font-bold text-text-muted uppercase tracking-widest">Live System Data</span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveInfo(null);
+                    }}
+                    className="w-full py-2 bg-surface hover:bg-surface-brighter border border-border-main rounded-xl text-[9px] font-black uppercase tracking-widest text-text-primary transition-all"
+                  >
+                    Close Details
+                  </button>
                 </div>
               </motion.div>
             )}
