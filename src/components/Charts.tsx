@@ -222,7 +222,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
   }, [transactions]);
 
   // Line Chart Data
-  const lineData = useMemo(() => ({
+  const lineData = {
     labels: timeline.map(t => t.label),
     datasets: EXPENSE_CATEGORIES.map(cat => ({
       label: cat,
@@ -232,26 +232,22 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       tension: 0.4,
       pointRadius: 2,
     }))
-  }), [timeline, transactions]);
+  };
 
-  // Donut & Radar Chart Data sharing basic totals
-  const totals = useMemo(() => 
-    EXPENSE_CATEGORIES.map(cat => transactions.filter(r => r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0)),
-  [transactions]);
-
-  const totalSpend = useMemo(() => totals.reduce((a, b) => a + b, 0), [totals]);
-
-  const donutData = useMemo(() => ({
+  // Donut Chart Data
+  const totals = EXPENSE_CATEGORIES.map(cat => transactions.filter(r => r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0));
+  const totalSpend = totals.reduce((a, b) => a + b, 0);
+  const donutData = {
     labels: EXPENSE_CATEGORIES,
     datasets: [{
       data: totals,
       backgroundColor: EXPENSE_CATEGORIES.map(c => CATEGORY_COLORS[c]),
-      borderColor: isDarkMode ? '#111318' : '#ffffff',
+      borderColor: '#111318',
       borderWidth: 2
     }]
-  }), [totals, isDarkMode]);
+  };
 
-  const radarData = useMemo(() => ({
+  const radarData = {
     labels: EXPENSE_CATEGORIES,
     datasets: [{
       label: 'Intensity',
@@ -262,10 +258,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       pointBorderColor: '#fff',
       borderWidth: 2
     }]
-  }), [totals]);
+  };
 
   // Stacked Bar Data
-  const stackedData = useMemo(() => ({
+  const stackedData = {
     labels: timeline.map(t => t.label),
     datasets: EXPENSE_CATEGORIES.map(cat => ({
       label: cat,
@@ -273,10 +269,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       backgroundColor: CATEGORY_COLORS[cat],
       stack: 'total'
     }))
-  }), [timeline, transactions]);
+  };
 
   // Monthly Revenue Trend (Income vs Expenses)
-  const revenueTrendData = useMemo(() => ({
+  const revenueTrendData = {
     labels: timeline.map(t => t.label),
     datasets: [
       {
@@ -302,10 +298,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         borderWidth: 3
       }
     ]
-  }), [timeline, transactions]);
+  };
 
   // Comparative Chart Data
-  const compData = useMemo(() => ({
+  const compData = {
     labels: timeline.map(t => t.label),
     datasets: [
       {
@@ -327,7 +323,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         borderRadius: 4,
       }
     ]
-  }), [timeline, transactions]);
+  };
 
   // Cumulative Chart Data
   const cumulativeData = useMemo(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useDeferredValue, useEffect } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { Transaction, CATEGORY_COLORS } from '../types';
 import { cn, formatPKR } from '../lib/utils';
 import { Search, ChevronDown, ChevronUp, X, ExternalLink, Calendar, Hash, Tag, ArrowUpRight, ArrowDownRight, Wallet, Info, FileText as ReportIcon, Download, Check, Settings } from 'lucide-react';
@@ -300,18 +300,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   }, [deferredSearch, ledgerModeCategory]);
 
   const paginatedTransactions = useMemo(() => {
+    if (isFiltered) return filteredTransactions;
+    
     const start = (currentPage - 1) * itemsPerPage;
     return filteredTransactions.slice(start, start + itemsPerPage);
-  }, [filteredTransactions, currentPage, itemsPerPage]);
+  }, [filteredTransactions, isFiltered, currentPage]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / itemsPerPage));
-
-  // Ensure current page is valid when filters change
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
 
   const ledgerSummary = useMemo(() => {
     if (!ledgerModeCategory) return [];
@@ -513,12 +508,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 {paginatedTransactions.map((r, idx) => (
                   <motion.tr 
                     key={r.sr} 
+                    layout
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
+                    transition={{ duration: 0.2 }}
                     onClick={() => setSelectedTransaction(r)}
-                    className={cn("hover:bg-accent-gold/[0.05] transition-colors cursor-pointer group border-b border-border-main/30", idx % 2 === 0 ? "bg-transparent" : "bg-surface-brighter/20")}
+                    className={cn("hover:bg-accent-gold/[0.05] transition-colors cursor-pointer group", idx % 2 === 0 ? "bg-transparent" : "bg-surface-brighter/40")}
                   >
                     <td className="hidden sm:table-cell p-3 font-mono text-[10px] text-text-muted">{r.sr}</td>
                     <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] whitespace-nowrap text-text-secondary">{r.date || '—'}</td>
@@ -559,7 +555,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         </div>
         
         {/* Pagination and Summary Footer */}
-        {totalPages > 1 && (
+        {!isFiltered && totalPages > 1 && (
           <div className="flex items-center justify-center gap-4 py-4 border-b border-border-main bg-surface/30">
             <button 
               disabled={currentPage === 1}
@@ -624,61 +620,60 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
       </div>
 
       {showSummary && ledgerModeCategory && (
-        <div className="animate-in fade-in slide-in-from-top-4 duration-500 pt-6 border-t border-border-main/50 relative">
-          <div className="sticky top-[130px] z-30 bg-bg/80 backdrop-blur-sm -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mb-6 border-b border-border-main/30 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-5">
+        <div className="animate-in fade-in slide-in-from-top-4 duration-500 pt-6 border-t border-border-main/50">
+          <div className="mb-6 px-2 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-5">
             <div className="flex flex-col gap-1">
-              <h2 className="text-lg sm:text-xl font-display font-black tracking-tight capitalize leading-tight flex items-center gap-2">
-                <div className="w-2 h-6 bg-accent-gold rounded-full" />
-                {ledgerModeCategory} Summary
+              <h2 className="text-lg sm:text-xl font-display font-black tracking-tight capitalize leading-tight">
+                {ledgerModeCategory} Ledger Summary
               </h2>
               {borrowStats && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 opacity-80 scale-95 origin-left">
-                   <div className="flex items-baseline gap-1.5">
-                      <span className="text-[8px] uppercase font-bold text-text-muted">OWED:</span>
-                      <span className="text-xs font-mono font-bold text-expense">{formatPKR(borrowStats.totalOwed)}</span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
+                   <div className="flex flex-col">
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">Total Owed</span>
+                      <span className="text-xs sm:text-sm font-mono font-bold text-expense">{formatPKR(borrowStats.totalOwed)}</span>
                    </div>
-                   <div className="w-px h-3 bg-border-main/30" />
-                   <div className="flex items-baseline gap-1.5">
-                      <span className="text-[8px] uppercase font-bold text-text-muted">RECEIVE:</span>
-                      <span className="text-xs font-mono font-bold text-income">{formatPKR(borrowStats.totalGets)}</span>
+                   <div className="hidden sm:block w-px h-6 bg-border-main" />
+                   <div className="flex flex-col">
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">To be Received</span>
+                      <span className="text-xs sm:text-sm font-mono font-bold text-income">{formatPKR(borrowStats.totalGets)}</span>
                    </div>
-                   <div className="w-px h-3 bg-border-main/30" />
-                   <div className="flex items-baseline gap-1.5">
-                      <span className={cn("text-xs font-mono font-bold", borrowStats.net >= 0 ? "text-income" : "text-expense")}>
-                        {borrowStats.net >= 0 ? 'SURPLUS' : 'DEFICIT'} {formatPKR(Math.abs(borrowStats.net))}
+                   <div className="hidden sm:block w-px h-6 bg-border-main" />
+                   <div className="flex flex-col">
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">Net Position</span>
+                      <span className={cn("text-xs sm:text-sm font-mono font-bold", borrowStats.net >= 0 ? "text-income" : "text-expense")}>
+                        {formatPKR(Math.abs(borrowStats.net))} {borrowStats.net >= 0 ? 'Surplus' : 'Deficit'}
                       </span>
                    </div>
                 </div>
               )}
             </div>
             
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-surface-brighter/50 p-1.5 rounded-xl border border-border-main shadow-inner">
-               <div className="flex items-center gap-1.5 px-2">
-                  <span className="text-[9px] font-black text-text-muted uppercase tracking-tighter">SORT:</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-surface-brighter p-2 rounded-xl border border-border-main">
+               <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-bold text-text-muted uppercase ml-1 mr-1">Sort:</span>
                   <select 
                     value={borrowSort} 
                     onChange={(e) => setBorrowSort(e.target.value as any)}
-                    className="bg-transparent text-[10px] font-bold text-accent-gold border-none outline-none cursor-pointer focus:ring-0"
+                    className="bg-transparent text-[10px] font-bold text-accent-gold border-none outline-none cursor-pointer"
                   >
-                    <option value="balance" className="bg-surface text-text-primary">{ledgerModeCategory === 'BORROW' ? 'Position' : 'Intensity'}</option>
-                    <option value="activity" className="bg-surface text-text-primary">Activity</option>
-                    <option value="name" className="bg-surface text-text-primary">A-Z Name</option>
+                    <option value="balance" className="bg-surface text-text-primary">{ledgerModeCategory === 'BORROW' ? 'By Balance' : 'By Intensity'}</option>
+                    <option value="activity" className="bg-surface text-text-primary">By Activity</option>
+                    <option value="name" className="bg-surface text-text-primary">By Name</option>
                   </select>
                </div>
                {ledgerModeCategory === 'BORROW' && (
                   <div className="flex items-center gap-2">
-                    <div className="w-px h-5 bg-border-main/50" />
+                    <div className="w-px h-4 bg-border-main" />
                     <div className="flex items-center gap-1">
-                        <div className="flex gap-1">
+                        <span className="text-[9px] font-bold text-text-muted uppercase ml-1 mr-1">View:</span>
+                        <div className="flex gap-1 pr-1">
                           {['all', 'owes', 'gets', 'clear'].map(f => (
                             <button 
                               key={f}
                               onClick={() => setBorrowFilter(f as any)}
                               className={cn(
-                                "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                                borrowFilter === f 
-                                  ? "bg-accent-gold text-black shadow-lg shadow-accent-gold/20" 
-                                  : "text-text-muted hover:text-text-primary hover:bg-surface"
+                                "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all",
+                                borrowFilter === f ? "bg-accent-gold text-black" : "text-text-muted hover:text-text-primary"
                               )}
                             >
                               {f}
