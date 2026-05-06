@@ -48,6 +48,7 @@ export default function App() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [logoError, setLogoError] = useState(false);
   const [isStaticHost, setIsStaticHost] = useState(false);
 
   useEffect(() => {
@@ -152,8 +153,20 @@ export default function App() {
   useEffect(() => {
     // Initial delay for entrance animation
     const timer = setTimeout(() => setIsReady(true), 600);
-    return () => clearTimeout(timer);
-  }, []);
+    
+    // Emergency loading escape: if stuck in loading for > 15s but we have data, enter anyway
+    const loadingTimer = setTimeout(() => {
+      if (loading && allData.length > 0) {
+        console.warn("Loading timeout: Data found, entering application.");
+        setLoading(false);
+      }
+    }, 15000);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(loadingTimer);
+    };
+  }, [loading, allData]);
 
   useEffect(() => {
     // Save CSV URL when it changes
@@ -563,14 +576,14 @@ export default function App() {
             className="fixed inset-0 z-[100] bg-bg flex flex-col items-center justify-center p-6 gap-6"
           >
             <div className="h-24 sm:h-32 flex items-center justify-center">
-              <img 
-                src={isDarkMode ? "/logo-dark.png" : "/logo-light.png"} 
-                alt="Account" 
-                className="h-full w-auto object-contain opacity-80" 
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+              {!logoError && (
+                <img 
+                  src={isDarkMode ? "/logo-dark.png" : "/logo-light.png"} 
+                  alt="Account" 
+                  className="h-full w-auto object-contain opacity-80" 
+                  onError={() => setLogoError(true)}
+                />
+              )}
             </div>
             
             {!error ? (
@@ -676,14 +689,12 @@ export default function App() {
                 <span className="text-[11px] font-bold text-expense uppercase tracking-widest">{error}</span>
                 <button onClick={() => syncFinancialData(csvUrl)} className="text-[10px] bg-expense/20 px-2 py-0.5 rounded text-expense hover:bg-expense hover:text-white transition-colors">Retry</button>
               </div>
-            )}
-
-            <main className={cn(
+            )}            <main key="main-content" className={cn(
               "flex-1 mx-auto w-full p-4 sm:p-6 transition-all duration-500 pb-32",
               currentView === 'register' ? "flex flex-col gap-2 pt-2 px-3 sm:px-4 lg:px-12 max-w-none" : "flex flex-col gap-8 max-w-[1920px]"
             )}>
-              {currentView === 'dashboard' && (
-                <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              {currentView === 'dashboard' ? (
+                <div key="view-dashboard" className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {/* KPI Grid */}
                   <section>
                     <div className="flex items-center gap-3 mb-6">
@@ -823,7 +834,9 @@ export default function App() {
                       </button>
                     </div>
                     {chartTab !== 'budget' ? (
-                      <Charts transactions={filteredData} allTransactions={allData} budgets={budgets} activeTab={chartTab as any} isDarkMode={isDarkMode} />
+                      <div key={`charts-${chartTab}`} className="min-h-[400px]">
+                        <Charts transactions={filteredData} allTransactions={allData} budgets={budgets} activeTab={chartTab as any} isDarkMode={isDarkMode} />
+                      </div>
                     ) : null}
                   </section>
 
@@ -886,10 +899,8 @@ export default function App() {
                 </div>
               )}
             </div>
-          )}
-
-          {currentView === 'register' && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 min-h-[calc(100vh-250px)]">
+          ) : (
+            <div key="view-register" className="animate-in fade-in slide-in-from-bottom-2 duration-500 min-h-[calc(100vh-250px)]">
               {/* Transaction Table */}
               <section className="mb-2">
                 <div className="flex items-center gap-3 mb-4">
