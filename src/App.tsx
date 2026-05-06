@@ -18,7 +18,7 @@ import { AddTransactionForm } from './components/AddTransactionForm';
 import { generatePDFReport, generateExcelReport } from './services/reportService';
 import { suggestCategory, batchCategorize } from './services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
-import { CircleDollarSign, Receipt, Scale, Handshake, Landmark, AlertCircle, FileText, BrainCircuit, Eye, EyeOff, TrendingDown, TrendingUp, Plus } from 'lucide-react';
+import { CircleDollarSign, Receipt, Scale, Handshake, Landmark, AlertCircle, FileText, BrainCircuit, Eye, EyeOff, TrendingDown, TrendingUp, Plus, ArrowLeft } from 'lucide-react';
 import { cn } from './lib/utils';
 
 const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
@@ -566,43 +566,45 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen bg-bg selection:bg-accent-gold/20 selection:text-accent-gold overflow-x-hidden">
-      <header className="sticky top-0 z-50">
-        <Navbar 
-          onConnectClick={() => setIsModalOpen(true)}
-          onUploadClick={() => document.getElementById('file-upload-dialog')?.click()}
-          onExportCSV={handleExport}
-          onReportClick={() => setIsReportModalOpen(true)}
-          onRefreshClick={() => syncFinancialData(csvUrl)}
-          isDarkMode={isDarkMode}
-          onThemeToggle={() => setIsDarkMode(!isDarkMode)}
-          lastUpdated={lastUpdated}
-          status={(error || dataSource === 'file') ? 'offline' : 'online'}
-          activeView={currentView}
-          onViewChange={setCurrentView}
-          onToggleFilters={() => setShowMobileFilters(!showMobileFilters)}
-          showFilters={showMobileFilters}
-          isInstallable={!!deferredPrompt}
-          onInstallClick={handleInstallClick}
-        />
+      {currentView !== 'quick-entry' && (
+        <header className="sticky top-0 z-50">
+          <Navbar 
+            onConnectClick={() => setIsModalOpen(true)}
+            onUploadClick={() => document.getElementById('file-upload-dialog')?.click()}
+            onExportCSV={handleExport}
+            onReportClick={() => setIsReportModalOpen(true)}
+            onRefreshClick={() => syncFinancialData(csvUrl)}
+            isDarkMode={isDarkMode}
+            onThemeToggle={() => setIsDarkMode(!isDarkMode)}
+            lastUpdated={lastUpdated}
+            status={(error || dataSource === 'file') ? 'offline' : 'online'}
+            activeView={currentView}
+            onViewChange={setCurrentView}
+            onToggleFilters={() => setShowMobileFilters(!showMobileFilters)}
+            showFilters={showMobileFilters}
+            isInstallable={!!deferredPrompt}
+            onInstallClick={handleInstallClick}
+          />
 
-        <AnimatePresence>
-          {(showMobileFilters || window.innerWidth >= 640) && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden sm:!h-auto sm:!opacity-100"
-            >
-              <FiltersBar 
-                filters={filters}
-                categories={categories}
-                setFilters={setFilters}
-                resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '', startDate: '', endDate: '' })}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
+          <AnimatePresence>
+            {(showMobileFilters || window.innerWidth >= 640) && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden sm:!h-auto sm:!opacity-100"
+              >
+                <FiltersBar 
+                  filters={filters}
+                  categories={categories}
+                  setFilters={setFilters}
+                  resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '', startDate: '', endDate: '' })}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </header>
+      )}
 
       <input 
         type="file" 
@@ -636,25 +638,29 @@ export default function App() {
       )}
 
       <main className={cn(
-        "flex-1 max-w-[1600px] mx-auto w-full p-4 sm:p-6 transition-all duration-500 pb-32",
-        (currentView === 'register' || currentView === 'quick-entry') ? "flex flex-col gap-0 pt-1 px-3 sm:px-4 lg:px-8" : "flex flex-col gap-8"
+        "flex-1 max-w-[1600px] mx-auto w-full transition-all duration-500",
+        currentView === 'quick-entry' ? "p-0 h-[100vh]" : "p-4 sm:p-6 pb-32"
       )}>
         {currentView === 'quick-entry' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 h-[calc(100vh-140px)]">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[4px]">Direct Ledger Entry</h2>
+          <div className="animate-in fade-in zoom-in-95 duration-500 h-full p-2 sm:p-4 bg-background">
+            <div className="flex items-center justify-between mb-4 px-4 pt-2">
+              <h2 className="text-[10px] font-black text-accent-gold uppercase tracking-[5px] flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-accent-gold animate-pulse" />
+                Ledger Terminal Phase-1
+              </h2>
               <button 
                 onClick={() => setCurrentView('dashboard')}
-                className="text-[10px] font-bold text-accent-gold uppercase tracking-widest hover:underline"
+                className="text-[10px] font-black text-text-muted hover:text-expense uppercase tracking-widest transition-colors flex items-center gap-2"
               >
-                Back to Dashboard
+                <ArrowLeft size={14} />
+                Abort Session
               </button>
             </div>
-            <div className="bg-surface border border-border-main rounded-3xl overflow-hidden shadow-2xl h-full">
+            <div className="bg-surface border border-border-main rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] h-[calc(100%-60px)]">
               <AddTransactionForm 
                 onSubmit={handleAddTransaction}
                 transactions={allData}
-                onCancel={() => setCurrentView('register')}
+                onCancel={() => setCurrentView('dashboard')}
               />
             </div>
           </div>
@@ -910,7 +916,7 @@ export default function App() {
       />
 
       <AnimatePresence>
-        {loading && (
+        {loading && allData.length === 0 && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
