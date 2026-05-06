@@ -16,8 +16,6 @@
         if (typeof window.fetch === 'function') {
           const originalFetch = window.fetch;
           try {
-            // Attempt to define safety property. 
-            // In some hardened environments, this will throw, so we wrap it.
             if (Object.getOwnPropertyDescriptor(window, 'fetch')?.configurable !== false) {
               Object.defineProperty(window, 'fetch', {
                 get: function() { return originalFetch; },
@@ -35,29 +33,80 @@
       })();
 
       // Global error handler to catch boot crashes
-      window.onerror = function(msg, url, line, col, error) {
+      window.addEventListener('error', function(event) {
         const loader = document.getElementById('static-loader');
-        if (loader) {
-          loader.style.backgroundColor = '#1a0505';
-          const text = loader.querySelector('.static-text');
-          if (text) {
-            text.innerHTML = 'BOOT ERROR: ' + (msg || 'Unknown failure') + '<br><br><button onclick="localStorage.clear(); location.reload();" style="background:#f0b429; color:black; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">FORCE RESTART</button>';
-            text.style.color = '#ef4444';
-            text.style.letterSpacing = '0';
+        if (!loader) return;
+        
+        let errorMsg = event.message || 'System Initialization Failure';
+        const url = event.filename || (event.target && event.target.src) || '';
+        
+        // Handle script load failures (404s)
+        if (event.target && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'LINK')) {
+          const src = event.target.src || event.target.href;
+          if (src && (src.includes('.tsx') || src.includes('/src/'))) {
+            showBootError('DEPLOYMENT ERROR: You uploaded SOURCE code tags. Please run "npm run build" and upload the contents of the "dist" folder.');
+            return;
           }
+          showBootError('RESOURCE ERROR: Failed to load ' + (src ? src.split('/').pop() : 'required asset') + '. Check your internet or deployment folder.');
+          return;
         }
-      };
 
-      // Failsafe: If app doesn't mount in 12s, show escape hatch
+        if (url && url.endsWith('.tsx')) {
+          showBootError('DEPLOYMENT ERROR: You are running .tsx source code in the browser. You must run "npm run build" and deploy the "dist" folder.');
+        } else if (errorMsg && (errorMsg.includes('Unexpected token') || errorMsg.includes('syntax error'))) {
+          showBootError('RUNTIME ERROR: Possible Syntax Mismatch. This usually happens when uploading source files instead of built files.');
+        } else {
+          showBootError(errorMsg);
+        }
+      }, true);
+
+      window.addEventListener('unhandledrejection', function(event) {
+        showBootError('PROMISE ERROR: ' + (event.reason ? event.reason.message || event.reason : 'Async Failure'));
+      });
+
+      function showBootError(msg) {
+        const loader = document.getElementById('static-loader');
+        if (!loader) return;
+        loader.style.backgroundColor = '#0f172a';
+        const text = loader.querySelector('.static-text');
+        if (text) {
+          text.innerHTML = '<div style="color: #ef4444; font-weight: 800; margin-bottom: 12px; letter-spacing: 0;">' + msg + '</div>' + 
+                           '<div style="font-size: 9px; line-height: 1.4; color: #94a3b8; margin-bottom: 20px; text-transform: none; letter-spacing: 0;">' + 
+                           'Follow the instructions in DEPLOYMENT.md to fix this. Usually this means you uploaded the whole folder instead of just <b>dist</b>.' + 
+                           '</div>' +
+                           '<div style="display: flex; gap: 10px; justify-content: center;">' +
+                           '<button onclick="localStorage.clear(); location.reload();" style="background:#f0b429; color:black; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; font-family: sans-serif;">RESTART</button>' +
+                           '<button onclick="alert(\'Detailed Error:\\n\' + msg + \'\\n\\nURL: \' + window.location.href + \'\\nEnvironment: \' + navigator.userAgent)" style="background:#334155; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; font-family: sans-serif;">DIAGNOSTICS</button>' +
+                           '</div>';
+          text.style.letterSpacing = '0';
+        }
+      }
+
+      // Failsafe: If app doesn't mount in 2s, show troubleshooting options
       setTimeout(() => {
         const loader = document.getElementById('static-loader');
         if (loader && loader.style.display !== 'none') {
           const text = loader.querySelector('.static-text');
-          if (text && !text.innerHTML.includes('RESTART')) {
-            text.innerHTML = 'Load taking longer than expected...<br><br><button onclick="location.reload()" style="background:#334155; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">RETRY LOAD</button>';
+          if (text && !text.innerHTML.includes('RESTART') && !text.innerHTML.includes('ERROR')) {
+            const scripts = Array.from(document.scripts);
+            const hasTsx = scripts.some(s => s.src && s.src.includes('.tsx'));
+            const mainScript = scripts.find(s => s.type === 'module')?.src || 'Not found';
+            
+            let statusMsg = hasTsx ? '<span style="color:#ef4444; font-weight:bold;">SOURCE CODE (.tsx) UPLOADED</span>' : 'Checking bundle...';
+            
+            text.innerHTML = '<div style="margin-bottom: 12px; font-size: 14px; font-weight:600;">Deployment Verification</div>' + 
+                             '<div style="margin-bottom: 20px; text-transform: none; font-size: 10px; color: #94a3b8; line-height: 1.5;">' + 
+                             statusMsg + '<br>' +
+                             'Main Script: ' + (mainScript.split('/').pop() || 'None') + '<br>' +
+                             '<div style="margin-top: 8px; color: #facc15;">Ensure you uploaded ONLY the <b>dist</b> folder contents.</div></div>' +
+                             '<div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">' +
+                             '<button onclick="location.reload()" style="background:#334155; color:white; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size: 11px;">RETRY</button>' +
+                             '<button onclick="localStorage.clear(); location.reload();" style="background:#f0b429; color:black; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size: 11px;">RESET</button>' +
+                             '<button onclick="alert(\'CRITICAL DIAGNOSTICS:\\n- Host: \' + window.location.hostname + \'\\n- Main Script: \' + \'' + mainScript + '\' + \'\\n- TSX Detected: \' + ' + hasTsx + ')" style="background:#475569; color:white; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size: 11px;">DIAGNOSTICS</button>' +
+                             '</div>';
           }
         }
-      }, 12000);
+      }, 2000);
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

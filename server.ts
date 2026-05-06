@@ -67,31 +67,58 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(__dirname, 'dist');
+    try {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } catch (e) {
+      console.warn('Vite failed to start, falling back to static server check.');
+      // If Vite fails (e.g. missing dependencies), we might want to show the dist check anyway
+    }
+  }
+
+  const distPath = path.join(__dirname, 'dist');
+  let indexHtmlExists = false;
+  try {
     const fs = await import('fs');
-    
-    // Check if dist/index.html exists to prevent cryptic errors
-    if (!fs.existsSync(path.join(distPath, 'index.html'))) {
-      app.get('*', (req, res) => {
-        res.status(500).send(`
-          <div style="font-family: system-ui, sans-serif; padding: 40px; text-align: center; background: #0a0c10; color: #ef4444; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <h1 style="font-size: 24px; margin-bottom: 16px;">Deployment Error</h1>
-            <p style="color: #94a3b8; max-width: 600px; line-height: 1.6; margin-bottom: 24px;">
-              ERROR: You uploaded SOURCE code (.tsx) to the server. Please run 'npm run build' and upload the 'dist' folder content.
-            </p>
-            <div style="text-align: left; background: #111318; padding: 20px; border-radius: 12px; font-size: 13px; color: #64748b; border: 1px solid #1f2430;">
-              <p style="margin-top: 0;"><strong>How to fix this:</strong></p>
-              <ol>
-                <li>Run <code>npm install</code> in your local terminal</li>
-                <li>Run <code>npm run build</code> to generate the <code>dist</code> folder</li>
-                <li>Upload only the contents of the <code>dist</code> folder to your hosting provider</li>
-              </ol>
+    indexHtmlExists = fs.existsSync(path.join(distPath, 'index.html'));
+  } catch (e) {
+    console.log('[System] fs module not available, skipping index.html existence check.');
+    // Assume it exists if we can't check, or handle based on environment
+    indexHtmlExists = process.env.NODE_ENV === 'production';
+  }
+
+  if (process.env.NODE_ENV === 'production' || !indexHtmlExists) {
+    if (!indexHtmlExists) {
+      app.get('*', (req, res, next) => {
+        // If we are in dev mode and Vite is handling it, this route won't be reached
+        // because Vite middleware is registered BEFORE this.
+        // If we are in production OR Vite failed, show this guide.
+        res.status(200).send(`
+          <div style="font-family: system-ui, sans-serif; padding: 40px; text-align: center; background: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="background: #1e293b; padding: 32px; border-radius: 16px; border: 1px solid #334155; max-width: 500px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);">
+              <h1 style="font-size: 24px; margin-bottom: 12px; color: #38bdf8;">Application Setup Guide</h1>
+              <p style="color: #94a3b8; line-height: 1.6; margin-bottom: 24px;">
+                You are currently running the server, but the frontend build is missing.
+              </p>
+              
+              <div style="text-align: left; background: #0f172a; padding: 20px; border-radius: 12px; font-size: 14px; border: 1px solid #334155;">
+                <p style="margin-top: 0; font-weight: 600; color: #f1f5f9;">For Local Development:</p>
+                <code style="display: block; background: #1e293b; padding: 8px; border-radius: 4px; margin-bottom: 16px; color: #38bdf8;">npm run dev</code>
+                
+                <p style="margin-top: 0; font-weight: 600; color: #f1f5f9;">For Deployment (Production):</p>
+                <ol style="padding-left: 20px; color: #94a3b8; margin-bottom: 0;">
+                  <li>Run <code style="color: #38bdf8;">npm run build</code></li>
+                  <li>Ensure the <code>dist</code> folder is created</li>
+                  <li>Run <code style="color: #38bdf8;">npm start</code></li>
+                </ol>
+              </div>
+              
+              <p style="margin-top: 24px; font-size: 12px; color: #64748b;">
+                Environment: ${process.env.NODE_ENV || 'development'}
+              </p>
             </div>
           </div>
         `);
