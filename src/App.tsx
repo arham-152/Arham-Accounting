@@ -642,7 +642,7 @@ export default function App() {
         currentView === 'quick-entry' ? "p-0 h-[100vh]" : "p-4 sm:p-6 pb-32"
       )}>
         {currentView === 'quick-entry' && (
-          <div className="animate-in fade-in zoom-in-95 duration-500 h-full p-2 sm:p-4 bg-background">
+          <div className="animate-in fade-in zoom-in-95 duration-500 h-full p-0 sm:p-4 bg-background">
             <div className="hidden sm:flex items-center justify-between mb-4 px-4 pt-2">
               <h2 className="text-[10px] font-black text-accent-gold uppercase tracking-[5px] flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-accent-gold animate-pulse" />
@@ -656,7 +656,7 @@ export default function App() {
                 Abort Session
               </button>
             </div>
-            <div className="bg-surface border border-border-main rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] h-full sm:h-[calc(100%-60px)]">
+            <div className="bg-surface border-0 sm:border border-border-main rounded-none sm:rounded-[2.5rem] overflow-hidden shadow-none sm:shadow-[0_0_50px_rgba(0,0,0,0.5)] h-full sm:h-[calc(100%-60px)]">
               <AddTransactionForm 
                 onSubmit={handleAddTransaction}
                 transactions={allData}

@@ -207,37 +207,62 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
   return (
     <div className="w-full h-full flex flex-col bg-surface overflow-hidden">
       {/* Scrollable Form Content */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-10 pb-0 lg:pb-24 space-y-4 lg:space-y-12 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-10 pb-0 lg:pb-24 space-y-3 lg:space-y-12 scrollbar-none">
         
+        {/* Mobile-Only Top Lookup Bar */}
+        <div className="lg:hidden bg-surface-brighter border border-border-main rounded-xl p-2 shadow-sm">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Eye size={10} className="text-accent-gold" />
+            <h4 className="text-[8px] font-black uppercase tracking-widest text-text-muted">Quick Fetch</h4>
+          </div>
+          <div className="flex gap-2">
+            <input 
+              type="number"
+              placeholder="SR #"
+              value={searchSr}
+              onChange={(e) => setSearchSr(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchRecord()}
+              className="flex-1 bg-surface border border-border-main rounded-lg py-1 px-3 outline-none text-[10px] font-mono font-bold"
+            />
+            <button
+              type="button"
+              onClick={fetchRecord}
+              className="bg-accent-gold px-4 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-black hover:opacity-90 active:scale-95 transition-all shadow-sm"
+            >
+              LOAD
+            </button>
+          </div>
+        </div>
+
         {/* State Banner for Edit Mode */}
         {formData.sr && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-accent-gold/5 border-2 border-accent-gold/20 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+            className="bg-accent-gold/5 border-2 border-accent-gold/20 rounded-2xl p-3 flex items-center justify-between gap-2"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-accent-gold flex items-center justify-center text-black shadow-xl shadow-accent-gold/20">
-                <FileText size={24} />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-accent-gold flex items-center justify-center text-black">
+                <FileText size={16} />
               </div>
-              <div className="space-y-0.5 text-center sm:text-left">
-                <h3 className="text-sm font-black uppercase tracking-[3px] text-accent-gold">Record Modification Active</h3>
-                <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest opacity-60">You are currently editing Ledger Entry # {formData.sr}</p>
+              <div className="space-y-0.5">
+                <p className="text-[9px] font-black uppercase tracking-[2px] text-accent-gold">Modifying Ledger</p>
+                <p className="text-[8px] text-text-muted font-bold opacity-60">Entry # {formData.sr}</p>
               </div>
             </div>
             <button 
               onClick={clearEdit}
-              className="px-6 py-2 bg-expense/10 text-expense text-[10px] font-black uppercase tracking-[2px] rounded-xl hover:bg-expense hover:text-white transition-all active:scale-95"
+              className="px-3 py-1.5 bg-expense/10 text-expense text-[8px] font-black uppercase tracking-[1px] rounded-lg"
             >
-              Discard & New Entry
+              RESET
             </button>
           </motion.div>
         )}
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-12">
           {/* Left Column: Input Panel */}
-          <div className="lg:col-span-8 space-y-6 lg:space-y-10">
+          <div className="lg:col-span-8 space-y-3 lg:space-y-10">
             
             {/* Amount Section - Compressed for Mobile */}
             <div className="space-y-1 lg:space-y-4">
@@ -256,15 +281,15 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                     onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                     required
                     placeholder="0.00"
-                    className="w-full bg-surface-brighter border-2 border-border-main focus:border-accent-gold rounded-xl lg:rounded-[2.5rem] py-3 lg:py-8 pl-10 lg:pl-20 pr-4 lg:pr-10 outline-none text-2xl lg:text-7xl font-display font-black transition-all shadow-inner focus:shadow-2xl"
+                    className="w-full bg-surface-brighter border-2 border-border-main focus:border-accent-gold rounded-xl lg:rounded-[2.5rem] py-2 lg:py-8 pl-10 lg:pl-20 pr-4 lg:pr-10 outline-none text-xl lg:text-7xl font-display font-black transition-all shadow-inner focus:shadow-2xl"
                   />
                 </div>
               </div>
             </div>
 
             {/* Core Details Grid - Compacted */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-8">
-              <div className="space-y-1 relative autocomplete-container">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:gap-8">
+              <div className="space-y-0.5 relative autocomplete-container">
                 <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Reference Identity</label>
                 <div className="relative">
                   <input 
@@ -274,7 +299,7 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                     onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
                     required
                     placeholder="Recipient..."
-                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-lg lg:rounded-2xl py-2.5 lg:py-4 px-4 lg:px-6 outline-none text-[10px] lg:text-base font-bold transition-all"
+                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-lg lg:rounded-2xl py-2 lg:py-4 px-4 lg:px-6 outline-none text-[10px] lg:text-base font-bold transition-all"
                   />
                   <AnimatePresence>
                     {showSuggestions && (
@@ -301,25 +326,25 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                 </div>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Entry Timestamp</label>
                 <input 
                   type="date" 
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full bg-surface-brighter border border-border-main rounded-lg lg:rounded-2xl py-2.5 lg:py-4 px-4 lg:px-6 outline-none text-[10px] lg:text-sm font-bold focus:border-accent-gold transition-all"
+                  className="w-full bg-surface-brighter border border-border-main rounded-lg lg:rounded-2xl py-2 lg:py-4 px-4 lg:px-6 outline-none text-[10px] lg:text-sm font-bold focus:border-accent-gold transition-all"
                 />
               </div>
             </div>
 
-            <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
-              <div className="space-y-1">
+            <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
+              <div className="space-y-0.5">
                 <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Impact Type</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                   className={cn(
-                    "w-full bg-surface-brighter border border-border-main rounded-lg lg:rounded-2xl p-2.5 lg:p-4 outline-none text-[10px] font-black uppercase tracking-[1px] lg:tracking-[2px] focus:border-accent-gold appearance-none transition-all shadow-sm",
+                    "w-full bg-surface-brighter border border-border-main rounded-lg lg:rounded-2xl p-2 lg:p-4 outline-none text-[10px] font-black uppercase tracking-[1px] lg:tracking-[2px] focus:border-accent-gold appearance-none transition-all shadow-sm",
                     formData.type === 'DEBIT' && "text-income border-income/40",
                     formData.type === 'CREDIT' && "text-expense border-expense/40",
                     formData.type === 'SAVING' && "text-accent-gold border-accent-gold/40"
@@ -331,13 +356,13 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                   <option value="SAVING">SAVING</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 lg:contents gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-2 lg:contents gap-2">
+                <div className="space-y-0.5">
                   <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Funding Source</label>
                   <select 
                     value={formData.from}
                     onChange={(e) => setFormData(prev => ({ ...prev, from: e.target.value }))}
-                    className="w-full bg-surface-brighter border border-border-main rounded-lg lg:rounded-2xl p-2.5 lg:p-4 outline-none text-[10px] font-bold uppercase tracking-tight lg:tracking-wider focus:border-accent-gold appearance-none shadow-sm"
+                    className="w-full bg-surface-brighter border border-border-main rounded-lg lg:rounded-2xl p-2 lg:p-4 outline-none text-[10px] font-bold uppercase tracking-tight lg:tracking-wider focus:border-accent-gold appearance-none shadow-sm"
                   >
                     <option value="Jazz-Cash">Jazz-Cash</option>
                     <option value="Naya-Pay">Naya-Pay</option>
@@ -348,12 +373,12 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                     <option value="Others">Others</option>
                   </select>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Funding Target</label>
                   <select 
                     value={formData.to}
                     onChange={(e) => setFormData(prev => ({ ...prev, to: e.target.value }))}
-                    className="w-full bg-surface-brighter border border-border-main rounded-lg lg:rounded-2xl p-2.5 lg:p-4 outline-none text-[10px] font-bold uppercase tracking-tight lg:tracking-wider focus:border-accent-gold appearance-none shadow-sm"
+                    className="w-full bg-surface-brighter border border-border-main rounded-lg lg:rounded-2xl p-2 lg:p-4 outline-none text-[10px] font-bold uppercase tracking-tight lg:tracking-wider focus:border-accent-gold appearance-none shadow-sm"
                   >
                     <option value="Jazz-Cash">Jazz-Cash</option>
                     <option value="Naya-Pay">Naya-Pay</option>
@@ -434,7 +459,7 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
             </div>
 
             {/* Mobile-Only Integrated Action Hub */}
-            <div className="lg:hidden space-y-2 pt-2 sticky bottom-0 bg-surface/95 backdrop-blur-md -mx-6 px-6 pb-2 border-t border-border-main z-20">
+            <div className="lg:hidden pt-2 sticky bottom-0 bg-surface/95 backdrop-blur-md -mx-4 px-4 pb-2 border-t border-border-main z-20 space-y-2">
               {/* Horizontal Shortcuts - Minimalist */}
               {templates.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto py-1 scrollbar-none">
@@ -474,59 +499,43 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                 </div>
               )}
 
-              {/* Ultra-Compact Control Bar */}
-              <div className="grid grid-cols-12 gap-2">
-                <div className="col-span-6 flex gap-1">
-                  <input 
-                    type="number"
-                    placeholder="SR #"
-                    value={searchSr}
-                    onChange={(e) => setSearchSr(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && fetchRecord()}
-                    className="w-16 bg-surface-brighter border border-border-main rounded-lg py-1 px-2 outline-none text-[10px] font-mono font-bold"
-                  />
-                  <button
-                    type="button"
-                    onClick={fetchRecord}
-                    className="flex-1 bg-accent-gold px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tight text-black hover:bg-accent-gold active:scale-95 transition-all"
-                  >
-                    LOAD
-                  </button>
-                </div>
-                
-                {/* Primary Icon-Only Actions in Single Row */}
-                <div className="col-span-6 flex gap-1 justify-end">
+              {/* Primary Icon-Only Actions in Single Row */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 h-[1px] bg-border-main/50" />
+                <div className="flex gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={saveTemplate}
                     disabled={!formData.name || !formData.amount}
-                    className="aspect-square flex items-center justify-center bg-surface-brighter border border-border-main rounded-lg text-text-muted disabled:opacity-30 active:scale-95 w-9 h-9"
+                    className="aspect-square flex items-center justify-center bg-surface-brighter border border-border-main rounded-xl text-text-muted disabled:opacity-30 active:scale-95 w-10 h-10 shadow-sm"
                     title="Save Template"
                   >
-                    <Star size={14} />
+                    <Star size={16} />
                   </button>
                   <button
                     onClick={handleSubmit}
                     disabled={loading || !formData.name || !formData.amount}
                     className={cn(
-                      "aspect-square rounded-lg flex items-center justify-center transition-all active:scale-95 w-9 h-9",
+                      "px-6 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 h-11",
                       (loading || !formData.name || !formData.amount) 
                         ? "bg-surface-brightest text-text-muted opacity-50 border border-border-main" 
-                        : "bg-accent-gold text-black shadow-lg shadow-accent-gold/20"
+                        : "bg-accent-gold text-black shadow-lg shadow-accent-gold/30"
                     )}
                     title="Commit Transaction"
                   >
-                    {loading ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
+                    {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                    <span className="text-[11px] font-black uppercase tracking-[2px]">SAVE</span>
                   </button>
                   <button
                     type="button"
                     onClick={onCancel}
-                    className="aspect-square flex items-center justify-center bg-expense/10 border border-expense/20 rounded-lg text-expense hover:bg-expense hover:text-white transition-all w-9 h-9"
+                    className="aspect-square flex items-center justify-center bg-expense/10 border border-expense/20 rounded-xl text-expense hover:bg-expense hover:text-white transition-all w-11 h-11"
                     title="Exit Ledger"
                   >
-                    <X size={14} />
+                    <X size={18} />
                   </button>
                 </div>
+                <div className="flex-1 h-[1px] bg-border-main/50" />
               </div>
             </div>
 
