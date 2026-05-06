@@ -410,68 +410,100 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   return (
     <div className="flex flex-col gap-6 mb-12" onClick={() => setActiveNoteSr(null)}>
       <div className="dashboard-card p-0 overflow-hidden flex flex-col mb-4">
-        <div className="p-4 sm:p-5 border-b border-border-main flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 bg-surface/50">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            <h3 className="text-xs font-bold m-0 text-text-primary whitespace-nowrap">Transaction Register</h3>
-            <span className="font-mono text-[9px] sm:text-[10px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main shrink-0">
-              {filteredTransactions.length} of {transactions.length} entries
-            </span>
-          </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
-            <div className="flex items-center gap-2 group cursor-pointer">
-              <input 
-                type="checkbox" 
-                id="show-summary-toggle"
-                checked={showSummary}
-                onChange={(e) => setShowSummary(e.target.checked)}
-                className="w-4 h-4 rounded border-border-main bg-surface-brighter text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
-              />
-              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-text-secondary group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest whitespace-nowrap">
-                Summary
-              </label>
+        <div className="p-3 sm:p-5 border-b border-border-main bg-surface/50">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* Top Row: Title, Info, Summary Toggle, Export Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xs font-bold m-0 text-text-primary whitespace-nowrap">Transaction Register</h3>
+                <span className="font-mono text-[9px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main shrink-0">
+                  {filteredTransactions.length} of {transactions.length} entries
+                </span>
+                
+                {/* Summary Toggle - Moved here for mobile/compact view */}
+                <div className="hidden sm:flex items-center gap-2 group cursor-pointer pl-4 border-l border-border-main/50">
+                  <input 
+                    type="checkbox" 
+                    id="show-summary-toggle-desktop"
+                    checked={showSummary}
+                    onChange={(e) => setShowSummary(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded border-border-main bg-surface-brighter text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
+                  />
+                  <label htmlFor="show-summary-toggle-desktop" className="text-[9px] font-bold text-text-secondary group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest whitespace-nowrap">
+                    Summary
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Mobile-only Summary Toggle */}
+                <div className="flex sm:hidden items-center gap-1.5 group cursor-pointer mr-2">
+                  <input 
+                    type="checkbox" 
+                    id="show-summary-toggle-mobile"
+                    checked={showSummary}
+                    onChange={(e) => setShowSummary(e.target.checked)}
+                    className="w-4 h-4 rounded border-border-main bg-surface-brighter text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
+                  />
+                  <label htmlFor="show-summary-toggle-mobile" className="text-[8px] font-bold text-text-secondary uppercase tracking-tighter">Sum</label>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleReport('PDF'); }}
+                    className="flex items-center gap-1.5 sm:gap-2 bg-accent-gold/10 hover:bg-accent-gold text-accent-gold hover:text-black px-2 sm:px-3 py-1.5 rounded-lg border border-accent-gold/20 text-[9px] sm:text-[10px] font-bold transition-all active:scale-95"
+                    title="Download Filtered PDF"
+                  >
+                    <ReportIcon size={12} />
+                    <span className="hidden xs:inline lg:inline">PDF</span>
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleReport('EXCEL'); }}
+                    className="flex items-center gap-1.5 sm:gap-2 bg-surface-brighter hover:bg-white/10 text-text-muted hover:text-text-primary px-2 sm:px-3 py-1.5 rounded-lg border border-border-main text-[9px] sm:text-[10px] font-bold transition-all active:scale-95"
+                    title="Download Filtered Excel"
+                  >
+                    <Download size={12} />
+                    <span className="hidden xs:inline lg:inline">Excel</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-lg border border-border-main w-full sm:w-auto">
-              <span className="text-[8px] sm:text-[9px] font-black text-text-secondary uppercase tracking-widest shrink-0 opacity-80">Mode:</span>
-              <select 
-                value={ledgerModeCategory || ''} 
-                onChange={(e) => setLedgerModeCategory(e.target.value || null)}
-                className="bg-transparent text-[10px] font-bold text-accent-gold outline-none cursor-pointer flex-1 sm:min-w-[120px]"
-              >
-                <option value="" className="bg-surface text-text-primary">Master Ledger</option>
-                {uniqueCategories.map(cat => (
-                  <option key={cat} value={cat} className="bg-surface text-text-primary">{cat}</option>
-                ))}
-              </select>
-            </div>
-            <div className="relative w-full sm:w-64">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-              <input 
-                type="text" 
-                value={tableSearch}
-                onChange={(e) => setTableSearch(e.target.value)}
-                placeholder="Search..."
-                className="bg-surface-brighter border border-border-main text-text-primary text-xs pl-9 pr-3 py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors w-full"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleReport('PDF'); }}
-                className="flex items-center gap-2 bg-accent-gold/10 hover:bg-accent-gold text-accent-gold hover:text-black px-3 py-1.5 rounded-lg border border-accent-gold/20 text-[10px] font-bold transition-all active:scale-95 whitespace-nowrap"
-                title="Download Filtered PDF"
-              >
-                <ReportIcon size={12} />
-                <span className="hidden lg:inline">PDF</span>
-              </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleReport('EXCEL'); }}
-                className="flex items-center gap-2 bg-surface-brighter hover:bg-white/10 text-text-muted hover:text-text-primary px-3 py-1.5 rounded-lg border border-border-main text-[10px] font-bold transition-all active:scale-95 whitespace-nowrap"
-                title="Download Filtered Excel"
-              >
-                <Download size={12} />
-                <span className="hidden lg:inline">Excel</span>
-              </button>
+            {/* Bottom Row: Mode Select and Search */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 bg-surface-brighter px-3 py-2 sm:py-1.5 rounded-lg border border-border-main flex-1 sm:max-w-[200px]">
+                <span className="text-[8px] font-black text-text-secondary uppercase tracking-widest shrink-0 opacity-80">Mode:</span>
+                <select 
+                  value={ledgerModeCategory || ''} 
+                  onChange={(e) => setLedgerModeCategory(e.target.value || null)}
+                  className="bg-transparent text-[10px] font-bold text-accent-gold outline-none cursor-pointer flex-1 appearance-none"
+                >
+                  <option value="" className="bg-surface text-text-primary">Master Ledger</option>
+                  {uniqueCategories.map(cat => (
+                    <option key={cat} value={cat} className="bg-surface text-text-primary">{cat}</option>
+                  ))}
+                </select>
+                <ChevronDown size={10} className="text-text-muted" />
+              </div>
+              
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input 
+                  type="text" 
+                  value={tableSearch}
+                  onChange={(e) => setTableSearch(e.target.value)}
+                  placeholder="Search ledger..."
+                  className="bg-surface-brighter border border-border-main text-text-primary text-xs pl-9 pr-3 py-2 sm:py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors w-full"
+                />
+                {tableSearch && (
+                  <button 
+                    onClick={() => setTableSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
