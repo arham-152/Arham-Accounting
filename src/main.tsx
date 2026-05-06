@@ -90,9 +90,6 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
-// Signal success to the static loader
-(window as any).APP_LOADED = true;
-
 // Service Worker registration for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

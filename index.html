@@ -11,69 +11,27 @@
     <link rel="apple-touch-icon" href="/logo-app.png" />
     <title>Account</title>
     <script>
-      // Global monitoring
-      window.APP_LOADED = false;
-
-      // Protection for the read-only 'fetch' property in AI Studio/Sandboxed environments
+      // Protection for the read-only 'fetch' property in AI Studio environment
       (function() {
         if (typeof window.fetch === 'function') {
           const originalFetch = window.fetch;
           try {
-            if (Object.getOwnPropertyDescriptor(window, 'fetch')?.configurable !== false) {
-              Object.defineProperty(window, 'fetch', {
-                get: function() { return originalFetch; },
-                set: function(v) { 
-                  console.warn("System Intercept: Attempt to overwrite 'fetch' blocked.");
-                },
-                configurable: true,
-                enumerable: true
-              });
-            }
-          } catch (e) {}
+            // Define a property with a no-op setter to prevent "getter-only" TypeErrors
+            Object.defineProperty(window, 'fetch', {
+              get: function() { return originalFetch; },
+              set: function(v) { 
+                console.warn("An external library tried to overwrite 'fetch'. This operation was intercepted to prevent a crash.");
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e) {
+            // If the environment has already locked 'fetch' beyond redefinition, 
+            // we have to hope that the Vite aliases for polyfills are catching it.
+            console.error("Critical environment lock: Unable to redefine 'fetch' property.", e);
+          }
         }
       })();
-
-      function showBootError(msg, type = 'error') {
-        const loader = document.getElementById('static-loader');
-        if (!loader) return;
-        
-        loader.style.backgroundColor = '#0a0c10';
-        const text = loader.querySelector('.static-text');
-        if (text) {
-          text.style.letterSpacing = '0';
-          text.style.textTransform = 'none';
-          
-          const isSourceMsg = msg.includes('.tsx') || msg.includes('SOURCE CODE');
-          const title = isSourceMsg ? 'DEPLOYMENT CONFIG ERROR' : (type === 'error' ? 'BOOT CRASH DETECTED' : 'SYSTEM TIMEOUT');
-          const color = isSourceMsg ? '#facc15' : (type === 'error' ? '#ef4444' : '#94a3b8');
-          
-          text.innerHTML = `
-            <div style="color: ${color}; font-weight: 800; margin-bottom: 8px; font-size: 16px;">${title}</div>
-            <div style="font-size: 11px; line-height: 1.5; color: #cbd5e1; margin-bottom: 24px; max-width: 320px; margin-left: auto; margin-right: auto;">
-              ${msg}<br><br>
-              <span style="color: #64748b;">(Check DEPLOYMENT.md for instructions)</span>
-            </div>
-            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-              <button onclick="location.reload()" style="background:#334155; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; font-size: 11px;">RETRY</button>
-              <button onclick="localStorage.clear(); location.reload();" style="background:#f59e0b; color:black; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; font-size: 11px;">RESET DATA</button>
-              <button onclick="alert('DIAGNOSTICS:\\n- Host: ' + window.location.hostname + '\\n- Protocol: ' + window.location.protocol + '\\n- Script: ' + (Array.from(document.scripts).find(s=>s.type==='module')?.src || 'None'))" style="background:#475569; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; font-size: 11px;">DIAGNOSTICS</button>
-            </div>
-          `;
-        }
-      }
-
-      window.addEventListener('error', function(event) {
-        let msg = event.message || 'Script execution error';
-        if (event.target && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'LINK')) {
-          msg = 'Failed to load: ' + (event.target.src || event.target.href || 'asset').split('/').pop();
-          if (msg.includes('.tsx')) msg = 'CRITICAL: Browser cannot run .tsx files. You uploaded the wrong folder.';
-        }
-        showBootError(msg);
-      }, true);
-
-      window.addEventListener('unhandledrejection', function(event) {
-        showBootError('ASYNC CRASH: ' + (event.reason?.message || event.reason || 'Unknown rejection'));
-      });
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -129,19 +87,6 @@
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Production Failsafe: Trigger after 5s if app hasn't mounted
-      setTimeout(() => {
-        if (!window.APP_LOADED) {
-          const main = Array.from(document.scripts).find(s => s.type === 'module')?.src || '';
-          if (main.includes('.tsx')) {
-            showBootError('CRITICAL: Source code detected. On production, you must serve built files from the "dist" folder.', 'error');
-          } else {
-            showBootError('Initialization taking longer than expected. This could be due to a slow database connection or script failure.', 'warning');
-          }
-        }
-      }, 5000);
-    </script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

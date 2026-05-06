@@ -35,44 +35,16 @@ export default function App() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [chartTab, setChartTab] = useState<'overview' | 'budget' | 'category' | 'month'>('overview');
   const [currentView, setCurrentView] = useState<'dashboard' | 'register'>('dashboard');
-  const [csvUrl, setCsvUrl] = useState(() => {
-    try {
-      return localStorage.getItem('account2026_csv_url') || '';
-    } catch (e) {
-      return '';
-    }
-  });
-  const [syncUrl, setSyncUrl] = useState(() => {
-    try {
-      return localStorage.getItem('account2026_sync_url') || '';
-    } catch (e) {
-      return '';
-    }
-  });
-  const [dataSource, setDataSource] = useState<'live' | 'file'>(() => {
-    try {
-      return localStorage.getItem('account2026_csv_url') ? 'live' : 'file';
-    } catch (e) {
-      return 'file';
-    }
-  });
+  const [csvUrl, setCsvUrl] = useState(() => localStorage.getItem('account2026_csv_url') || '');
+  const [syncUrl, setSyncUrl] = useState(() => localStorage.getItem('account2026_sync_url') || '');
+  const [dataSource, setDataSource] = useState<'live' | 'file'>(() => localStorage.getItem('account2026_csv_url') ? 'live' : 'file');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    try {
-      const saved = localStorage.getItem('account2026_theme');
-      return saved ? saved === 'dark' : true; // Default to dark
-    } catch (e) {
-      return true;
-    }
+    const saved = localStorage.getItem('account2026_theme');
+    return saved ? saved === 'dark' : true; // Default to dark
   });
-  const [hideAmounts, setHideAmounts] = useState(() => {
-    try {
-      return localStorage.getItem('account2026_privacy') === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
+  const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('account2026_privacy') === 'true');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -81,11 +53,9 @@ export default function App() {
   useEffect(() => {
     // Detect if we are on a static host (Cloudflare Workers, Netlify, Github Pages, etc)
     const hostname = window.location.hostname;
-    const isCloudflare = hostname.includes('pages.dev') || hostname.includes('workers.dev');
-    
-    if (hostname.includes('netlify.app') || hostname.includes('github.io') || isCloudflare) {
+    if (hostname.includes('workers.dev') || hostname.includes('netlify.app') || hostname.includes('github.io') || hostname.includes('pages.dev')) {
       setIsStaticHost(true);
-      console.log("[System] Static host detected. Optimizing connection logic. " + (isCloudflare ? "(Cloudflare Mode)" : ""));
+      console.log("[System] Static host detected. Optimizing connection logic.");
     }
   }, []);
 
@@ -113,10 +83,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    try {
-      localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
-    } catch (e) {}
-    
+    localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -125,9 +92,7 @@ export default function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('account2026_privacy', hideAmounts.toString());
-    } catch (e) {}
+    localStorage.setItem('account2026_privacy', hideAmounts.toString());
   }, [hideAmounts]);
 
   const [filters, setFilters] = useState({
@@ -173,21 +138,15 @@ export default function App() {
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem('account2026_budgets', JSON.stringify(budgets));
-    } catch (e) {}
+    localStorage.setItem('account2026_budgets', JSON.stringify(budgets));
   }, [budgets]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('account2026_wealth', JSON.stringify(wealthAssets));
-    } catch (e) {}
+    localStorage.setItem('account2026_wealth', JSON.stringify(wealthAssets));
   }, [wealthAssets]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('account2026_goals', JSON.stringify(savingsGoals));
-    } catch (e) {}
+    localStorage.setItem('account2026_goals', JSON.stringify(savingsGoals));
   }, [savingsGoals]);
 
   useEffect(() => {
@@ -199,17 +158,13 @@ export default function App() {
   useEffect(() => {
     // Save CSV URL when it changes
     if (csvUrl) {
-      try {
-        localStorage.setItem('account2026_csv_url', csvUrl);
-      } catch (e) {}
+      localStorage.setItem('account2026_csv_url', csvUrl);
     }
   }, [csvUrl]);
 
   useEffect(() => {
     if (syncUrl) {
-      try {
-        localStorage.setItem('account2026_sync_url', syncUrl);
-      } catch (e) {}
+      localStorage.setItem('account2026_sync_url', syncUrl);
     }
   }, [syncUrl]);
 

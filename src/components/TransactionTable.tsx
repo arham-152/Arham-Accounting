@@ -570,7 +570,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     <td className="hidden xl:table-cell p-3 text-[10px] text-text-muted capitalize">{r.from}</td>
                     <td className="hidden xl:table-cell p-3 text-[10px] text-accent-gold/80 font-medium capitalize">{r.to}</td>
                     <td className="p-2 sm:p-3 text-right sm:text-left">
-                       <div className="text-[10px] sm:text-[11px] text-text-secondary font-medium italic line-clamp-1 max-w-[80px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[500px] ml-auto sm:ml-0" title={r.notes}>
+                       <div className="text-[10px] sm:text-[11px] text-text-secondary font-medium italic line-clamp-1 max-w-[80px] sm:max-w-[180px] md:max-w-[250px] ml-auto sm:ml-0" title={r.notes}>
                          {r.notes || <span className="text-text-muted/20">—</span>}
                        </div>
                     </td>

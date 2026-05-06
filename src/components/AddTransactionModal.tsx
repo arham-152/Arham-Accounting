@@ -166,22 +166,22 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[150] flex items-center justify-center sm:p-4 bg-black/95 backdrop-blur-xl">
+      <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
         <motion.div 
-          initial={{ opacity: 0, scale: 1, y: 100 }}
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 1, y: 100 }}
-          className="bg-surface sm:border sm:border-border-main sm:rounded-3xl w-full h-full sm:h-auto sm:max-w-md overflow-hidden shadow-2xl flex flex-col sm:max-h-[90vh] relative"
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          className="bg-surface border border-border-main rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
         >
           {/* Header */}
-          <div className="p-4 sm:p-6 border-b border-border-main flex justify-between items-center bg-surface-brighter safe-top">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-accent-gold/10 flex items-center justify-center text-accent-gold">
-                <CreditCard size={window.innerWidth < 640 ? 16 : 20} />
+          <div className="p-6 border-b border-border-main flex justify-between items-center bg-surface-brighter">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent-gold/10 flex items-center justify-center text-accent-gold">
+                <CreditCard size={20} />
               </div>
               <div className="flex flex-col">
-                <h3 className="text-base sm:text-xl font-display font-black tracking-tight">{isEditing ? 'Update Entry' : 'Record Entry'}</h3>
-                {isEditing && <span className="text-[8px] sm:text-[9px] font-bold text-accent-gold uppercase tracking-widest leading-none">SR #{formData.sr}</span>}
+                <h3 className="text-xl font-display font-black tracking-tight">{isEditing ? 'Update Entry' : 'Record Entry'}</h3>
+                {isEditing && <span className="text-[9px] font-bold text-accent-gold uppercase tracking-widest leading-none">Editing SR #{formData.sr}</span>}
               </div>
             </div>
             <button 
@@ -192,26 +192,26 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 custom-scrollbar">
-            {/* SR Search Section - More compact */}
-            <div className="p-3 sm:p-4 bg-surface-brightest border border-border-main rounded-xl sm:rounded-2xl space-y-2 sm:space-y-3">
-              <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-accent-gold">Quick Fetch (SR#)</label>
+          <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+            {/* SR Search Section */}
+            <div className="p-4 bg-surface-brightest border border-border-main rounded-2xl space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[2px] text-accent-gold">Fetch Old Record (Quick Edit)</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
                   <input 
                     type="number"
-                    placeholder="Fetch by SR..."
+                    placeholder="Enter SR Number..."
                     value={searchSr}
                     onChange={(e) => setSearchSr(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleFetchSr())}
-                    className="w-full bg-surface border border-border-main rounded-lg sm:rounded-xl py-1.5 sm:py-2 pl-8 pr-3 text-[10px] sm:text-xs font-mono outline-none focus:border-accent-gold transition-all"
+                    className="w-full bg-surface border border-border-main rounded-xl py-2 pl-9 pr-3 text-xs font-mono outline-none focus:border-accent-gold transition-all"
                   />
                 </div>
                 <button 
                   type="button"
                   onClick={handleFetchSr}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-accent-gold text-black rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+                  className="px-4 py-2 bg-accent-gold text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
                 >
                   Fetch
                 </button>
@@ -233,10 +233,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                         notes: ''
                       });
                     }}
-                    className="p-1.5 sm:p-2 bg-surface hover:text-expense border border-border-main rounded-lg sm:rounded-xl transition-all"
-                    title="Clear"
+                    className="px-4 py-2 bg-surface text-text-muted hover:text-expense border border-border-main rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                   >
-                    <X size={14} />
+                    Clear
                   </button>
                 )}
               </div>
@@ -244,25 +243,25 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
 
             {/* Quick Templates Section */}
             {templates.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-accent-gold">Frequent Items</label>
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <div className="space-y-2 mb-2">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-accent-gold">Quick Templates</label>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
                   {templates.map(t => (
                     <button
                       key={t.id}
                       type="button"
                       onClick={() => applyTemplate(t)}
-                      className="flex-shrink-0 px-3 py-1.5 bg-surface-brighter border border-border-main rounded-lg flex items-center gap-2 hover:border-accent-gold group transition-all"
+                      className="flex-shrink-0 px-4 py-2 bg-surface-brighter border border-border-main rounded-xl flex items-center gap-2 hover:border-accent-gold group transition-all"
                     >
                       <div className="flex flex-col items-start">
-                        <span className="text-[9px] font-bold text-text-primary truncate max-w-[60px] sm:max-w-[80px]">{t.name}</span>
-                        <span className="text-[7px] font-mono text-text-muted">₨{t.amount}</span>
+                        <span className="text-[10px] font-bold text-text-primary truncate max-w-[80px]">{t.name}</span>
+                        <span className="text-[8px] font-mono text-text-muted">₨{t.amount}</span>
                       </div>
                       <div 
                         onClick={(e) => deleteTemplate(t.id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-expense transition-opacity"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-expense transition-opacity"
                       >
-                        <Trash2 size={8} />
+                        <Trash2 size={10} />
                       </div>
                     </button>
                   ))}
@@ -270,12 +269,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-              {/* Amount - Improved Responsive Sizing */}
-              <div className="space-y-1.5">
-                <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Transaction Amount</label>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Amount - The Hero Input */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Amount (PKR)</label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl sm:text-2xl font-bold text-accent-gold opacity-50">₨</div>
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-accent-gold opacity-50">₨</div>
                   <input 
                     type="number" 
                     step="any"
@@ -283,16 +282,16 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                     onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                     required
                     placeholder="0.00"
-                    className="w-full bg-surface-brighter border-2 border-border-main focus:border-accent-gold rounded-xl sm:rounded-2xl py-3 sm:py-5 pl-10 sm:pl-12 pr-4 sm:pr-6 outline-none text-2xl sm:text-3xl font-display font-black transition-all"
+                    className="w-full bg-surface-brighter border-2 border-border-main focus:border-accent-gold rounded-2xl py-5 pl-12 pr-6 outline-none text-3xl font-display font-black transition-all"
                   />
                 </div>
               </div>
 
               {/* Reference Name */}
-              <div className="space-y-1.5 relative">
-                <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Reference / Description</label>
+              <div className="space-y-2 relative">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Reference / Person</label>
                 <div className="relative">
-                  <FileText size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                  <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
                   <input 
                     type="text" 
                     value={formData.name}
@@ -302,11 +301,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => {
+                      // Small delay to allow clicking a suggestion
                       setTimeout(() => setShowSuggestions(false), 200);
                     }}
                     required
-                    placeholder="What was this for?"
-                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-lg sm:rounded-xl py-2.5 sm:py-3 pl-11 pr-4 outline-none text-[11px] sm:text-sm transition-all font-bold"
+                    placeholder="Who or What? (e.g. Aslam, Fuel, Grocery)"
+                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl py-3 pl-12 pr-4 outline-none text-sm transition-all font-bold"
                   />
                 </div>
 
@@ -338,10 +338,10 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                 </AnimatePresence>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 {/* Type Dropdown */}
-                <div className="space-y-1.5">
-                  <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Type</label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Entry Type</label>
                   <div className="relative">
                     <select
                       value={formData.type}
@@ -354,42 +354,42 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                         }));
                       }}
                       className={cn(
-                        "w-full bg-surface-brighter border border-border-main rounded-lg sm:rounded-xl p-2 sm:p-3 outline-none text-[10px] sm:text-xs font-bold focus:border-accent-gold appearance-none transition-all",
+                        "w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none transition-all",
                         formData.type === 'DEBIT' && "text-income border-income/30",
                         formData.type === 'CREDIT' && "text-expense border-expense/30",
                         formData.type === 'TRANSFER' && "text-accent-gold border-accent-gold/30"
                       )}
                     >
-                      <option value="DEBIT">INCOME</option>
-                      <option value="CREDIT">EXPENSE</option>
+                      <option value="DEBIT">INCOME (DEBIT)</option>
+                      <option value="CREDIT">EXPENSE (CREDIT)</option>
                       <option value="TRANSFER">TRANSFER</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Date */}
-                <div className="space-y-1.5">
-                  <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Date</label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Date</label>
                   <div className="relative">
-                    <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
                     <input 
                       type="date" 
                       value={formData.date}
                       onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                      className="w-full bg-surface-brighter border border-border-main rounded-lg sm:rounded-xl py-2 sm:py-2.5 pl-9 pr-2 outline-none text-[10px] sm:text-xs font-bold focus:border-accent-gold"
+                      className="w-full bg-surface-brighter border border-border-main rounded-xl py-2.5 pl-9 pr-3 outline-none text-xs font-bold focus:border-accent-gold"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Channels */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                 <div className="space-y-1.5">
-                   <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-text-muted">From (Source)</label>
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">From (Source)</label>
                    <select 
                      value={formData.from}
                      onChange={(e) => setFormData(prev => ({ ...prev, from: e.target.value }))}
-                     className="w-full bg-surface-brighter border border-border-main rounded-lg sm:rounded-xl p-2 sm:p-3 outline-none text-[10px] sm:text-xs font-bold focus:border-accent-gold appearance-none"
+                     className="w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none"
                    >
                      <option value="CASH">CASH</option>
                      <option value="Jazz-Cash">JAZZ-CASH</option>
@@ -397,12 +397,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                      <option value="OTHER">OTHER</option>
                    </select>
                  </div>
-                 <div className="space-y-1.5">
-                   <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-text-muted">To (Target)</label>
+                 <div className="space-y-2">
+                   <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">To (Target)</label>
                    <select 
                      value={formData.to}
                      onChange={(e) => setFormData(prev => ({ ...prev, to: e.target.value }))}
-                     className="w-full bg-surface-brighter border border-border-main rounded-lg sm:rounded-xl p-2 sm:p-3 outline-none text-[10px] sm:text-xs font-bold focus:border-accent-gold appearance-none"
+                     className="w-full bg-surface-brighter border border-border-main rounded-xl p-3 outline-none text-xs font-bold focus:border-accent-gold appearance-none"
                    >
                      <option value="CASH">CASH</option>
                      <option value="Jazz-Cash">JAZZ-CASH</option>
@@ -413,16 +413,16 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
               </div>
 
               {/* Category */}
-              <div className="space-y-1.5">
-                <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Quick Category</label>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Category</label>
+                <div className="flex flex-wrap gap-2">
                   {['SALARY', 'INCOME', 'BORROW', 'SAVING', 'TRANSFER', ...EXPENSE_CATEGORIES].map(cat => (
                     <button
                       key={cat}
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, category: cat }))}
                       className={cn(
-                        "px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[9px] sm:text-[10px] font-bold border transition-all",
+                        "px-3 py-2 rounded-lg text-[10px] font-bold border transition-all",
                         formData.category === cat 
                           ? "bg-accent-gold/10 border-accent-gold text-accent-gold" 
                           : "bg-surface-brighter border-border-main text-text-muted hover:border-text-muted"
@@ -435,35 +435,35 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
               </div>
 
               {/* Notes */}
-              <div className="space-y-1.5">
-                <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Additional Notes</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Special Notes</label>
                 <textarea 
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Anything else?"
-                  rows={window.innerWidth < 640 ? 1 : 2}
-                  className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-lg sm:rounded-xl p-3 sm:p-4 outline-none text-[11px] sm:text-sm transition-all resize-none"
+                  placeholder="Optional notes or details..."
+                  rows={2}
+                  className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl p-4 outline-none text-sm transition-all resize-none"
                 />
               </div>
             </form>
           </div>
 
-          {/* Footer Actions - Stack on mobile, side by side on desktop */}
-          <div className="p-4 sm:p-6 bg-surface-brighter border-t border-border-main flex flex-col gap-2.5 sm:gap-3 safe-bottom">
-             <div className="flex gap-2 sm:gap-3">
+          {/* Footer Actions */}
+          <div className="p-6 bg-surface-brighter border-t border-border-main flex flex-col gap-3">
+             <div className="flex gap-3">
                <button
                  type="button"
                  onClick={saveTemplate}
                  disabled={!formData.name || !formData.amount}
-                 className="flex-1 py-3 bg-surface border border-border-main text-[9px] font-black uppercase tracking-[1px] text-text-muted hover:border-accent-gold hover:text-accent-gold rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                 className="flex-1 py-3 bg-surface border border-border-main text-[9px] font-black uppercase tracking-[1px] text-text-muted hover:border-accent-gold hover:text-accent-gold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                >
-                 <Star size={12} className="hidden sm:block" />
+                 <Star size={12} />
                  Save Template
                </button>
                <button
                  type="button"
                  onClick={onClose}
-                 className="flex-1 py-3 text-[9px] font-black uppercase tracking-[1px] text-text-muted hover:text-text-primary transition-colors hidden sm:block"
+                 className="flex-1 py-3 text-[9px] font-black uppercase tracking-[1px] text-text-muted hover:text-text-primary transition-colors"
                >
                  Cancel
                </button>
@@ -473,13 +473,13 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                onClick={handleSubmit}
                disabled={loading || !formData.name || !formData.amount}
                className={cn(
-                 "w-full py-3.5 sm:py-4 bg-accent-gold text-black rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-[2px] shadow-xl transition-all flex items-center justify-center gap-2",
+                 "w-full py-4 bg-accent-gold text-black rounded-2xl text-[10px] font-black uppercase tracking-[2px] shadow-xl transition-all flex items-center justify-center gap-2",
                  (loading || !formData.name || !formData.amount) ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.01] active:scale-95",
                  isEditing && "bg-income"
                )}
              >
                {loading ? <Loader2 className="animate-spin" size={16} /> : (isEditing ? <Save className="text-black" size={16} /> : <Save size={16} />)}
-               {loading ? 'Submitting...' : (isEditing ? 'Update Entry' : 'Confirm Transaction')}
+               {loading ? 'Submitting...' : (isEditing ? 'Update Entry' : 'Confirm Entry')}
              </button>
           </div>
         </motion.div>
