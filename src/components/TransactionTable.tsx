@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useDeferredValue, useEffect } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { Transaction, CATEGORY_COLORS } from '../types';
 import { cn, formatPKR } from '../lib/utils';
 import { Search, ChevronDown, ChevronUp, X, ExternalLink, Calendar, Hash, Tag, ArrowUpRight, ArrowDownRight, Wallet, Info, FileText as ReportIcon, Download, Check, Settings } from 'lucide-react';
@@ -300,18 +300,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   }, [deferredSearch, ledgerModeCategory]);
 
   const paginatedTransactions = useMemo(() => {
+    if (isFiltered) return filteredTransactions;
+    
     const start = (currentPage - 1) * itemsPerPage;
     return filteredTransactions.slice(start, start + itemsPerPage);
-  }, [filteredTransactions, currentPage, itemsPerPage]);
+  }, [filteredTransactions, isFiltered, currentPage]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / itemsPerPage));
-
-  // Ensure current page is valid when filters change
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
 
   const ledgerSummary = useMemo(() => {
     if (!ledgerModeCategory) return [];
@@ -415,31 +410,29 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   return (
     <div className="flex flex-col gap-6 mb-12" onClick={() => setActiveNoteSr(null)}>
       <div className="dashboard-card p-0 overflow-hidden flex flex-col mb-4">
-        <div className="p-3 sm:p-5 border-b border-border-main bg-surface/50 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-6">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[2px] text-text-primary">Transaction Register</h3>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main shrink-0">
-                {filteredTransactions.length} / {transactions.length}
-              </span>
-              <div className="flex items-center gap-2 group cursor-pointer px-2 py-0.5 bg-surface-brighter rounded border border-border-main">
-                <input 
-                  type="checkbox" 
-                  id="show-summary-toggle"
-                  checked={showSummary}
-                  onChange={(e) => setShowSummary(e.target.checked)}
-                  className="w-3 h-3 rounded border-border-main bg-surface shadow-inner text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
-                />
-                <label htmlFor="show-summary-toggle" className="text-[9px] font-bold text-text-muted group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-tighter whitespace-nowrap">
-                  Summary
-                </label>
-              </div>
-            </div>
+        <div className="p-4 sm:p-5 border-b border-border-main flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 bg-surface/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <h3 className="text-xs font-bold m-0 text-text-primary whitespace-nowrap">Transaction Register</h3>
+            <span className="font-mono text-[9px] sm:text-[10px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main shrink-0">
+              {filteredTransactions.length} of {transactions.length} entries
+            </span>
           </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
+            <div className="flex items-center gap-2 group cursor-pointer">
+              <input 
+                type="checkbox" 
+                id="show-summary-toggle"
+                checked={showSummary}
+                onChange={(e) => setShowSummary(e.target.checked)}
+                className="w-4 h-4 rounded border-border-main bg-surface-brighter text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
+              />
+              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-text-secondary group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest whitespace-nowrap">
+                Summary
+              </label>
+            </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-            <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-xl border border-border-main flex-1 sm:flex-none">
-              <span className="text-[8px] font-black text-text-muted uppercase tracking-widest shrink-0">Mode:</span>
+            <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-lg border border-border-main w-full sm:w-auto">
+              <span className="text-[8px] sm:text-[9px] font-black text-text-secondary uppercase tracking-widest shrink-0 opacity-80">Mode:</span>
               <select 
                 value={ledgerModeCategory || ''} 
                 onChange={(e) => setLedgerModeCategory(e.target.value || null)}
@@ -451,35 +444,34 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 ))}
               </select>
             </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-48 lg:w-64">
-                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-                <input 
-                  type="text" 
-                  value={tableSearch}
-                  onChange={(e) => setTableSearch(e.target.value)}
-                  placeholder="Search ledger..."
-                  className="bg-surface-brighter border border-border-main text-text-primary text-[11px] pl-8 pr-3 py-1.5 rounded-xl outline-none focus:border-accent-gold transition-colors w-full"
-                />
-              </div>
-              
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleReport('PDF'); }}
-                  className="p-2 bg-accent-gold/10 hover:bg-accent-gold text-accent-gold hover:text-black rounded-xl border border-accent-gold/20 transition-all active:scale-90"
-                  title="PDF Report"
-                >
-                  <ReportIcon size={14} />
-                </button>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleReport('EXCEL'); }}
-                  className="p-2 bg-surface-brighter hover:bg-white/10 text-text-muted hover:text-text-primary rounded-xl border border-border-main transition-all active:scale-90"
-                  title="Excel Export"
-                >
-                  <Download size={14} />
-                </button>
-              </div>
+            <div className="relative w-full sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input 
+                type="text" 
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                placeholder="Search..."
+                className="bg-surface-brighter border border-border-main text-text-primary text-xs pl-9 pr-3 py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors w-full"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleReport('PDF'); }}
+                className="flex items-center gap-2 bg-accent-gold/10 hover:bg-accent-gold text-accent-gold hover:text-black px-3 py-1.5 rounded-lg border border-accent-gold/20 text-[10px] font-bold transition-all active:scale-95 whitespace-nowrap"
+                title="Download Filtered PDF"
+              >
+                <ReportIcon size={12} />
+                <span className="hidden lg:inline">PDF</span>
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleReport('EXCEL'); }}
+                className="flex items-center gap-2 bg-surface-brighter hover:bg-white/10 text-text-muted hover:text-text-primary px-3 py-1.5 rounded-lg border border-border-main text-[10px] font-bold transition-all active:scale-95 whitespace-nowrap"
+                title="Download Filtered Excel"
+              >
+                <Download size={12} />
+                <span className="hidden lg:inline">Excel</span>
+              </button>
             </div>
           </div>
         </div>
@@ -516,34 +508,19 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 {paginatedTransactions.map((r, idx) => (
                   <motion.tr 
                     key={r.sr} 
+                    layout
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
+                    transition={{ duration: 0.2 }}
                     onClick={() => setSelectedTransaction(r)}
-                    className={cn("hover:bg-accent-gold/[0.02] transition-colors cursor-pointer group border-b border-border-main/10", idx % 2 === 0 ? "bg-transparent" : "bg-surface-brighter/10")}
+                    className={cn("hover:bg-accent-gold/[0.05] transition-colors cursor-pointer group", idx % 2 === 0 ? "bg-transparent" : "bg-surface-brighter/40")}
                   >
                     <td className="hidden sm:table-cell p-3 font-mono text-[10px] text-text-muted">{r.sr}</td>
-                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] whitespace-nowrap text-text-secondary">
-                      {window.innerWidth < 768 ? (r.date || '').split('-').slice(1).join('/') : (r.date || '—')}
-                    </td>
-                    <td className="p-2 sm:p-3">
-                      <div className="flex flex-col">
-                        <span className="text-[11px] sm:text-xs font-bold text-text-primary group-hover:text-accent-gold transition-colors line-clamp-1">{r.name || '—'}</span>
-                        <div className="flex items-center gap-1.5 mt-0.5 md:hidden">
-                          <span className={cn(
-                            "text-[8px] px-1 rounded uppercase font-black tracking-tighter",
-                            r.type === 'DEBIT' ? "bg-income/10 text-income" : 
-                            r.type === 'CREDIT' ? "bg-expense/10 text-expense" : 
-                            "bg-saving/10 text-saving"
-                          )}>
-                            {r.category || 'Misc'}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] whitespace-nowrap text-text-secondary">{r.date || '—'}</td>
+                    <td className="p-2 sm:p-3 font-semibold truncate max-w-[120px] sm:max-w-[180px] text-text-primary text-[11px] sm:text-[12px]" title={r.name}>{r.name || '—'}</td>
                     <td className={cn("p-2 sm:p-3 font-mono font-bold text-right sm:text-left text-[11px] sm:text-[12px]", 
-                      r.type === 'DEBIT' ? "text-income" : r.type === 'CREDIT' ? "text-expense" : "text-saving"
+                      r.type === 'DEBIT' ? "text-income" : r.type === 'CREDIT' ? "text-expense" : "text-text-muted"
                     )}>
                       {formatPKR(r.amount)}
                     </td>
@@ -569,11 +546,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     </td>
                     <td className="hidden xl:table-cell p-3 text-[10px] text-text-muted capitalize">{r.from}</td>
                     <td className="hidden xl:table-cell p-3 text-[10px] text-accent-gold/80 font-medium capitalize">{r.to}</td>
-                    <td className="p-2 sm:p-3 text-right sm:text-left">
-                       <div className="text-[10px] sm:text-[11px] text-text-secondary font-medium italic line-clamp-1 max-w-[80px] sm:max-w-[180px] md:max-w-[250px] ml-auto sm:ml-0" title={r.notes}>
-                         {r.notes || <span className="text-text-muted/20">—</span>}
-                       </div>
-                    </td>
+                    <td className="p-2 sm:p-3 text-[10px] text-text-primary font-medium italic whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] sm:max-w-[200px]" title={r.notes}>{r.notes || '—'}</td>
                   </motion.tr>
                 ))}
               </AnimatePresence>
@@ -582,7 +555,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         </div>
         
         {/* Pagination and Summary Footer */}
-        {totalPages > 1 && (
+        {!isFiltered && totalPages > 1 && (
           <div className="flex items-center justify-center gap-4 py-4 border-b border-border-main bg-surface/30">
             <button 
               disabled={currentPage === 1}
@@ -608,99 +581,99 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         )}
         
         {/* Register Summary Footer */}
-        <div className="p-3 sm:p-5 bg-surface border-t border-border-main flex flex-col lg:flex-row items-center justify-between gap-4">
-          <div className="grid grid-cols-3 gap-2 sm:gap-6 w-full lg:w-auto">
+        <div className="p-4 bg-surface border-t border-border-main flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex flex-col">
-              <span className="text-[8px] sm:text-[10px] text-text-muted font-black uppercase tracking-widest">Income</span>
-              <span className="text-xs sm:text-sm font-mono font-bold text-income truncate">{formatPKR(registerSummary.income)}</span>
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Total Income</span>
+              <span className="text-sm font-mono font-bold text-income">{formatPKR(registerSummary.income)}</span>
             </div>
-            <div className="flex flex-col border-l border-border-main/50 pl-2 sm:pl-6">
-              <span className="text-[8px] sm:text-[10px] text-text-muted font-black uppercase tracking-widest">Expense</span>
-              <span className="text-xs sm:text-sm font-mono font-bold text-expense truncate">{formatPKR(registerSummary.expense)}</span>
+            <div className="hidden sm:block w-px h-8 bg-border-main" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Total Expense</span>
+              <span className="text-sm font-mono font-bold text-expense">{formatPKR(registerSummary.expense)}</span>
             </div>
-            <div className="flex flex-col border-l border-border-main/50 pl-2 sm:pl-6">
-              <span className="text-[8px] sm:text-[10px] text-text-muted font-black uppercase tracking-widest">Savings</span>
-              <span className="text-xs sm:text-sm font-mono font-bold text-saving truncate">{formatPKR(registerSummary.saving)}</span>
+            <div className="hidden sm:block w-px h-8 bg-border-main" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Savings</span>
+              <span className="text-sm font-mono font-bold text-saving">{formatPKR(registerSummary.saving)}</span>
             </div>
           </div>
           
-          <div className="w-full lg:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-surface-brighter rounded-xl border border-border-main flex items-center justify-between lg:justify-start gap-4 shadow-inner">
-            <div className="flex flex-col items-start lg:items-end">
-              <span className="text-[8px] sm:text-[10px] text-text-muted font-black uppercase tracking-widest">Filtered Position</span>
+          <div className="w-full sm:w-auto px-4 sm:px-6 py-3 bg-surface-brighter rounded-xl border border-border-main flex items-center justify-between sm:justify-start gap-4">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Net Filtered Balance</span>
               <span className={cn(
-                "text-lg sm:text-xl font-display font-black tracking-tighter leading-none mt-1",
+                "text-xl font-display font-black tracking-tighter",
                 registerSummary.net >= 0 ? "text-income" : "text-expense"
               )}>
                 {formatPKR(registerSummary.net)}
               </span>
             </div>
             <div className={cn(
-              "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg shrink-0",
+              "w-10 h-10 rounded-full flex items-center justify-center shadow-lg",
               registerSummary.net >= 0 ? "bg-income text-black" : "bg-expense text-white"
             )}>
-              <Wallet size={16} className="sm:hidden" />
-              <Wallet size={20} className="hidden sm:block" />
+              <Wallet size={20} />
             </div>
           </div>
         </div>
       </div>
 
       {showSummary && ledgerModeCategory && (
-        <div className="animate-in fade-in slide-in-from-top-4 duration-500 pt-6 border-t border-border-main/50 relative">
-          <div className="sticky top-[130px] z-30 bg-bg/80 backdrop-blur-sm -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mb-6 border-b border-border-main/30 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-5">
+        <div className="animate-in fade-in slide-in-from-top-4 duration-500 pt-6 border-t border-border-main/50">
+          <div className="mb-6 px-2 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-5">
             <div className="flex flex-col gap-1">
-              <h2 className="text-lg sm:text-xl font-display font-black tracking-tight capitalize leading-tight flex items-center gap-2">
-                <div className="w-2 h-6 bg-accent-gold rounded-full" />
-                {ledgerModeCategory} Summary
+              <h2 className="text-lg sm:text-xl font-display font-black tracking-tight capitalize leading-tight">
+                {ledgerModeCategory} Ledger Summary
               </h2>
               {borrowStats && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 opacity-80 scale-95 origin-left">
-                   <div className="flex items-baseline gap-1.5">
-                      <span className="text-[8px] uppercase font-bold text-text-muted">OWED:</span>
-                      <span className="text-xs font-mono font-bold text-expense">{formatPKR(borrowStats.totalOwed)}</span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
+                   <div className="flex flex-col">
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">Total Owed</span>
+                      <span className="text-xs sm:text-sm font-mono font-bold text-expense">{formatPKR(borrowStats.totalOwed)}</span>
                    </div>
-                   <div className="w-px h-3 bg-border-main/30" />
-                   <div className="flex items-baseline gap-1.5">
-                      <span className="text-[8px] uppercase font-bold text-text-muted">RECEIVE:</span>
-                      <span className="text-xs font-mono font-bold text-income">{formatPKR(borrowStats.totalGets)}</span>
+                   <div className="hidden sm:block w-px h-6 bg-border-main" />
+                   <div className="flex flex-col">
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">To be Received</span>
+                      <span className="text-xs sm:text-sm font-mono font-bold text-income">{formatPKR(borrowStats.totalGets)}</span>
                    </div>
-                   <div className="w-px h-3 bg-border-main/30" />
-                   <div className="flex items-baseline gap-1.5">
-                      <span className={cn("text-xs font-mono font-bold", borrowStats.net >= 0 ? "text-income" : "text-expense")}>
-                        {borrowStats.net >= 0 ? 'SURPLUS' : 'DEFICIT'} {formatPKR(Math.abs(borrowStats.net))}
+                   <div className="hidden sm:block w-px h-6 bg-border-main" />
+                   <div className="flex flex-col">
+                      <span className="text-[8px] uppercase font-bold text-text-muted tracking-widest">Net Position</span>
+                      <span className={cn("text-xs sm:text-sm font-mono font-bold", borrowStats.net >= 0 ? "text-income" : "text-expense")}>
+                        {formatPKR(Math.abs(borrowStats.net))} {borrowStats.net >= 0 ? 'Surplus' : 'Deficit'}
                       </span>
                    </div>
                 </div>
               )}
             </div>
             
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-surface-brighter/50 p-1.5 rounded-xl border border-border-main shadow-inner">
-               <div className="flex items-center gap-1.5 px-2">
-                  <span className="text-[9px] font-black text-text-muted uppercase tracking-tighter">SORT:</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-surface-brighter p-2 rounded-xl border border-border-main">
+               <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-bold text-text-muted uppercase ml-1 mr-1">Sort:</span>
                   <select 
                     value={borrowSort} 
                     onChange={(e) => setBorrowSort(e.target.value as any)}
-                    className="bg-transparent text-[10px] font-bold text-accent-gold border-none outline-none cursor-pointer focus:ring-0"
+                    className="bg-transparent text-[10px] font-bold text-accent-gold border-none outline-none cursor-pointer"
                   >
-                    <option value="balance" className="bg-surface text-text-primary">{ledgerModeCategory === 'BORROW' ? 'Position' : 'Intensity'}</option>
-                    <option value="activity" className="bg-surface text-text-primary">Activity</option>
-                    <option value="name" className="bg-surface text-text-primary">A-Z Name</option>
+                    <option value="balance" className="bg-surface text-text-primary">{ledgerModeCategory === 'BORROW' ? 'By Balance' : 'By Intensity'}</option>
+                    <option value="activity" className="bg-surface text-text-primary">By Activity</option>
+                    <option value="name" className="bg-surface text-text-primary">By Name</option>
                   </select>
                </div>
                {ledgerModeCategory === 'BORROW' && (
                   <div className="flex items-center gap-2">
-                    <div className="w-px h-5 bg-border-main/50" />
+                    <div className="w-px h-4 bg-border-main" />
                     <div className="flex items-center gap-1">
-                        <div className="flex gap-1">
+                        <span className="text-[9px] font-bold text-text-muted uppercase ml-1 mr-1">View:</span>
+                        <div className="flex gap-1 pr-1">
                           {['all', 'owes', 'gets', 'clear'].map(f => (
                             <button 
                               key={f}
                               onClick={() => setBorrowFilter(f as any)}
                               className={cn(
-                                "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                                borrowFilter === f 
-                                  ? "bg-accent-gold text-black shadow-lg shadow-accent-gold/20" 
-                                  : "text-text-muted hover:text-text-primary hover:bg-surface"
+                                "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all",
+                                borrowFilter === f ? "bg-accent-gold text-black" : "text-text-muted hover:text-text-primary"
                               )}
                             >
                               {f}

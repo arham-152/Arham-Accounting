@@ -42,57 +42,40 @@ const ChartCard: React.FC<{
   height?: number; 
   delay?: number;
   logicInfo?: string;
-}> = ({ title, sub, children, height = 290, delay = 0, logicInfo }) => {
-  const [isRendered, setIsRendered] = React.useState(false);
-  
-  React.useEffect(() => {
-    // Small delay to ensure container is in DOM and has measured its size
-    const timer = setTimeout(() => setIsRendered(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay, ease: [0.23, 1, 0.32, 1] }}
-      className="dashboard-card p-4 sm:p-5 group/card"
-    >
-      <div className="flex justify-between items-start mb-0.5">
-        <h3 className="text-xs sm:text-sm font-bold">{title}</h3>
-        {logicInfo && (
-          <div className="relative group/logic">
-            <div className="cursor-help text-text-muted hover:text-accent-gold transition-colors">
-              <Info size={14} />
-            </div>
-            {/* Chart Logic Tooltip */}
-            <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/logic:opacity-100 group-hover/logic:visible transition-all z-50 pointer-events-none">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap size={12} className="text-accent-gold" />
-                <span className="text-[9px] uppercase font-black text-accent-gold tracking-widest leading-none">Logic Info</span>
-              </div>
-              <p className="text-[10px] text-text-primary leading-relaxed font-medium">
-                {logicInfo}
-              </p>
-            </div>
+}> = ({ title, sub, children, height = 290, delay = 0, logicInfo }) => (
+  <motion.div 
+    initial={{ opacity: 0, y: 30 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.6, delay, ease: [0.23, 1, 0.32, 1] }}
+    className="dashboard-card p-4 sm:p-5 group/card"
+  >
+    <div className="flex justify-between items-start mb-0.5">
+      <h3 className="text-xs sm:text-sm font-bold">{title}</h3>
+      {logicInfo && (
+        <div className="relative group/logic">
+          <div className="cursor-help text-text-muted hover:text-accent-gold transition-colors">
+            <Info size={14} />
           </div>
-        )}
-      </div>
-      <p className="text-[10px] sm:text-[11px] text-text-muted mb-6">{sub}</p>
-      <div 
-        className="relative w-full h-[240px] sm:h-[280px] overflow-hidden" 
-        style={height ? { height: `calc(${height}px * 0.85)`, minHeight: '200px' } : { minHeight: '240px' }}
-      >
-        {isRendered ? children : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-border-main border-t-accent-gold rounded-full animate-spin" />
+          {/* Chart Logic Tooltip */}
+          <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-surface-brightest border border-border-main rounded-xl shadow-2xl opacity-0 invisible group-hover/logic:opacity-100 group-hover/logic:visible transition-all z-50 pointer-events-none">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap size={12} className="text-accent-gold" />
+              <span className="text-[9px] uppercase font-black text-accent-gold tracking-widest leading-none">Logic Info</span>
+            </div>
+            <p className="text-[10px] text-text-primary leading-relaxed font-medium">
+              {logicInfo}
+            </p>
           </div>
-        )}
-      </div>
-    </motion.div>
-  );
-};
+        </div>
+      )}
+    </div>
+    <p className="text-[10px] sm:text-[11px] text-text-muted mb-6">{sub}</p>
+    <div className="relative h-[240px] sm:h-[280px]" style={height ? { height: `calc(${height}px * 0.85)` } : undefined}>
+      {children}
+    </div>
+  </motion.div>
+);
 
 const commonOptions = {
   responsive: true,
@@ -239,7 +222,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
   }, [transactions]);
 
   // Line Chart Data
-  const lineData = useMemo(() => ({
+  const lineData = {
     labels: timeline.map(t => t.label),
     datasets: EXPENSE_CATEGORIES.map(cat => ({
       label: cat,
@@ -249,26 +232,22 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       tension: 0.4,
       pointRadius: 2,
     }))
-  }), [timeline, transactions]);
+  };
 
-  // Donut & Radar Chart Data sharing basic totals
-  const totals = useMemo(() => 
-    EXPENSE_CATEGORIES.map(cat => transactions.filter(r => r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0)),
-  [transactions]);
-
-  const totalSpend = useMemo(() => totals.reduce((a, b) => a + b, 0), [totals]);
-
-  const donutData = useMemo(() => ({
+  // Donut Chart Data
+  const totals = EXPENSE_CATEGORIES.map(cat => transactions.filter(r => r.category === cat && r.type === 'CREDIT').reduce((s, r) => s + r.amount, 0));
+  const totalSpend = totals.reduce((a, b) => a + b, 0);
+  const donutData = {
     labels: EXPENSE_CATEGORIES,
     datasets: [{
       data: totals,
       backgroundColor: EXPENSE_CATEGORIES.map(c => CATEGORY_COLORS[c]),
-      borderColor: isDarkMode ? '#111318' : '#ffffff',
+      borderColor: '#111318',
       borderWidth: 2
     }]
-  }), [totals, isDarkMode]);
+  };
 
-  const radarData = useMemo(() => ({
+  const radarData = {
     labels: EXPENSE_CATEGORIES,
     datasets: [{
       label: 'Intensity',
@@ -279,10 +258,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       pointBorderColor: '#fff',
       borderWidth: 2
     }]
-  }), [totals]);
+  };
 
   // Stacked Bar Data
-  const stackedData = useMemo(() => ({
+  const stackedData = {
     labels: timeline.map(t => t.label),
     datasets: EXPENSE_CATEGORIES.map(cat => ({
       label: cat,
@@ -290,10 +269,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
       backgroundColor: CATEGORY_COLORS[cat],
       stack: 'total'
     }))
-  }), [timeline, transactions]);
+  };
 
   // Monthly Revenue Trend (Income vs Expenses)
-  const revenueTrendData = useMemo(() => ({
+  const revenueTrendData = {
     labels: timeline.map(t => t.label),
     datasets: [
       {
@@ -319,10 +298,10 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         borderWidth: 3
       }
     ]
-  }), [timeline, transactions]);
+  };
 
   // Comparative Chart Data
-  const compData = useMemo(() => ({
+  const compData = {
     labels: timeline.map(t => t.label),
     datasets: [
       {
@@ -344,7 +323,7 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         borderRadius: 4,
       }
     ]
-  }), [timeline, transactions]);
+  };
 
   // Cumulative Chart Data
   const cumulativeData = useMemo(() => {
@@ -632,46 +611,44 @@ export const Charts: React.FC<ChartsProps> = ({ transactions, allTransactions, b
         delay={0.9}
         logicInfo="Aggregates total Volume of Income (DEBIT) and Expenses (CREDIT) for each calendar year. Stacked bars show the total economic scale per year."
       >
-        <div className="w-full h-full min-h-[200px]">
-          <ResponsiveContainer width="99%" height="99%">
-            <ReBarChart data={yearlySummary} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
-              <ReGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-              <ReXAxis 
-                dataKey="year" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: textColor, fontSize: 10 }}
-              />
-              <ReYAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: textColor, fontSize: 10 }}
-                tickFormatter={(v) => v >= 1000 ? `₨${(v/1000).toFixed(0)}k` : `₨${v}`}
-              />
-              <ReTooltip 
-                contentStyle={{ 
-                  backgroundColor: tooltipBg, 
-                  borderColor: tooltipBorder, 
-                  borderRadius: '12px',
-                  fontSize: '11px',
-                  color: textColor 
-                }}
-                itemStyle={{ fontSize: '11px', padding: '2px 0' }}
-                formatter={(value: number) => [formatPKR(value), '']}
-                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-              />
-              <ReLegend 
-                verticalAlign="top" 
-                align="right" 
-                iconType="circle" 
-                iconSize={8}
-                wrapperStyle={{ fontSize: '10px', paddingBottom: '10px' }}
-              />
-              <ReBar dataKey="income" name="Income" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
-              <ReBar dataKey="expense" name="Expense" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
-            </ReBarChart>
-          </ResponsiveContainer>
-        </div>
+        <ResponsiveContainer width="100%" height="100%">
+          <ReBarChart data={yearlySummary} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <ReGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+            <ReXAxis 
+              dataKey="year" 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: textColor, fontSize: 10 }}
+            />
+            <ReYAxis 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: textColor, fontSize: 10 }}
+              tickFormatter={(v) => v >= 1000 ? `₨${(v/1000).toFixed(0)}k` : `₨${v}`}
+            />
+            <ReTooltip 
+              contentStyle={{ 
+                backgroundColor: tooltipBg, 
+                borderColor: tooltipBorder, 
+                borderRadius: '12px',
+                fontSize: '11px',
+                color: textColor 
+              }}
+              itemStyle={{ fontSize: '11px', padding: '2px 0' }}
+              formatter={(value: number) => [formatPKR(value), '']}
+              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+            />
+            <ReLegend 
+              verticalAlign="top" 
+              align="right" 
+              iconType="circle" 
+              iconSize={8}
+              wrapperStyle={{ fontSize: '10px', paddingBottom: '10px' }}
+            />
+            <ReBar dataKey="income" name="Income" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
+            <ReBar dataKey="expense" name="Expense" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
+          </ReBarChart>
+        </ResponsiveContainer>
       </ChartCard>
     </div>
   );

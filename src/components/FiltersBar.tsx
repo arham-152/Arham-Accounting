@@ -10,8 +10,6 @@ interface FiltersBarProps {
     type: string;
     channel: string;
     search: string;
-    startDate: string;
-    endDate: string;
   };
   categories: string[];
   setFilters: (filters: any) => void;
@@ -114,28 +112,6 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({ filters, categories, set
         </select>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-[9px] font-bold text-text-secondary tracking-widest uppercase opacity-80">Start Date</label>
-        <input 
-          type="date" 
-          name="startDate"
-          value={filters.startDate}
-          onChange={handleChange}
-          className="bg-surface-brighter border border-border-main text-text-primary text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-1.5 rounded-lg outline-none hover:border-accent-gold transition-colors [color-scheme:dark]"
-        />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-[9px] font-bold text-text-secondary tracking-widest uppercase opacity-80">End Date</label>
-        <input 
-          type="date" 
-          name="endDate"
-          value={filters.endDate}
-          onChange={handleChange}
-          className="bg-surface-brighter border border-border-main text-text-primary text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-1.5 rounded-lg outline-none hover:border-accent-gold transition-colors [color-scheme:dark]"
-        />
-      </div>
-
       <div className="flex-1 flex flex-col gap-1 min-w-[160px]">
         <label className="text-[9px] font-bold text-text-muted tracking-widest uppercase">Search</label>
         <input 
@@ -149,7 +125,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({ filters, categories, set
       </div>
 
       <button 
-        onClick={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '', startDate: '', endDate: '' })}
+        onClick={resetFilters}
         className="text-[11px] font-bold text-text-muted border border-border-main px-3 py-1.5 rounded-lg hover:border-expense hover:text-expense transition-all"
       >
         ↺ Reset
