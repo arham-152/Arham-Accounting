@@ -222,20 +222,43 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* Header with Search Tool Toggle for Mobile */}
+        <div className="flex items-center justify-between lg:hidden mb-2">
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+              className="px-3 py-2 bg-surface-brighter border border-border-main rounded-xl text-[9px] font-black uppercase tracking-wider text-accent-gold"
+            >
+              Category: {formData.category || 'None'}
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => {
+                const shortcuts = document.getElementById('mobile-shortcuts');
+                shortcuts?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="p-2 bg-surface-brighter border border-border-main rounded-xl text-accent-gold"
+            >
+              <Star size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12">
           {/* Left Column: Input Panel */}
-          <div className="lg:col-span-8 space-y-10">
+          <div className="lg:col-span-8 space-y-6 lg:space-y-10">
             
-            {/* Amount Section - The Hero of the form */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 ml-2">
-                <div className="w-6 h-[1px] bg-accent-gold" />
-                <label className="text-[10px] font-black uppercase tracking-[4px] text-text-muted">Transaction Value</label>
+            {/* Amount Section - Compressed for Mobile */}
+            <div className="space-y-2 lg:space-y-4">
+              <div className="flex items-center gap-2 lg:gap-4 ml-2">
+                <div className="w-4 lg:w-6 h-[1px] bg-accent-gold" />
+                <label className="text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] lg:tracking-[4px] text-text-muted">Transaction Value</label>
               </div>
               <div className="relative group">
-                <div className="absolute -inset-1 bg-accent-gold/20 rounded-[2.5rem] blur opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
+                <div className="absolute -inset-1 bg-accent-gold/20 rounded-2xl lg:rounded-[2.5rem] blur opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
                 <div className="relative">
-                  <div className="absolute left-8 top-1/2 -translate-y-1/2 text-3xl font-black text-accent-gold opacity-30 select-none">₨</div>
+                  <div className="absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 text-xl lg:text-3xl font-black text-accent-gold opacity-30 select-none">₨</div>
                   <input 
                     type="number" 
                     step="any"
@@ -243,21 +266,16 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                     onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                     required
                     placeholder="0.00"
-                    className="w-full bg-surface-brighter border-2 border-border-main focus:border-accent-gold rounded-[2.5rem] py-8 pl-20 pr-10 outline-none text-5xl sm:text-7xl font-display font-black transition-all shadow-inner focus:shadow-2xl"
+                    className="w-full bg-surface-brighter border-2 border-border-main focus:border-accent-gold rounded-2xl lg:rounded-[2.5rem] py-4 lg:py-8 pl-12 lg:pl-20 pr-6 lg:pr-10 outline-none text-3xl lg:text-7xl font-display font-black transition-all shadow-inner focus:shadow-2xl"
                   />
-                  {formData.amount && (
-                    <div className="absolute right-8 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-muted/40 uppercase tracking-widest">
-                      PKR Verified
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
 
-            {/* Core Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3 relative autocomplete-container">
-                <label className="ml-4 text-[10px] font-black uppercase tracking-[3px] text-text-muted">Reference Identity</label>
+            {/* Core Details Grid - Compacted */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
+              <div className="space-y-2 relative autocomplete-container">
+                <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Reference Identity</label>
                 <div className="relative">
                   <input 
                     type="text" 
@@ -265,8 +283,8 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
                     required
-                    placeholder="Enter recipient or name..."
-                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-2xl py-4 px-6 outline-none text-base font-bold transition-all"
+                    placeholder="Recipient..."
+                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl lg:rounded-2xl py-3 lg:py-4 px-4 lg:px-6 outline-none text-xs lg:text-base font-bold transition-all"
                   />
                   <AnimatePresence>
                     {showSuggestions && (
@@ -274,17 +292,17 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                         initial={{ opacity: 0, scale: 0.98, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.98, y: -10 }}
-                        className="absolute z-[100] left-0 right-0 top-full mt-2 bg-surface border-2 border-border-main rounded-2xl shadow-2xl overflow-hidden backdrop-blur-3xl"
+                        className="absolute z-[100] left-0 right-0 top-full mt-1 bg-surface border-2 border-border-main rounded-xl shadow-2xl overflow-hidden backdrop-blur-3xl"
                       >
                         {suggestions.map((name, i) => (
                           <button
                             key={i}
                             type="button"
                             onClick={() => selectSuggestion(name)}
-                            className="w-full text-left px-6 py-4 text-xs text-text-primary hover:bg-accent-gold hover:text-black transition-all flex items-center justify-between group border-b border-border-main last:border-0"
+                            className="w-full text-left px-4 py-3 text-[10px] text-text-primary hover:bg-accent-gold hover:text-black transition-all flex items-center justify-between group border-b border-border-main last:border-0"
                           >
                             <span className="font-bold">{name}</span>
-                            <Plus size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Plus size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                           </button>
                         ))}
                       </motion.div>
@@ -293,25 +311,25 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="ml-4 text-[10px] font-black uppercase tracking-[3px] text-text-muted">Entry Timestamp</label>
+              <div className="space-y-2">
+                <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Entry Timestamp</label>
                 <input 
                   type="date" 
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full bg-surface-brighter border border-border-main rounded-2xl py-4 px-6 outline-none text-sm font-bold focus:border-accent-gold transition-all"
+                  className="w-full bg-surface-brighter border border-border-main rounded-xl lg:rounded-2xl py-3 lg:py-4 px-4 lg:px-6 outline-none text-[10px] lg:text-sm font-bold focus:border-accent-gold transition-all"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-3">
-                <label className="ml-4 text-[10px] font-black uppercase tracking-[2px] text-text-muted">Impact Type</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-6">
+              <div className="space-y-2">
+                <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Impact Type</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                   className={cn(
-                    "w-full bg-surface-brighter border border-border-main rounded-2xl p-4 outline-none text-[11px] font-black uppercase tracking-[2px] focus:border-accent-gold appearance-none transition-all shadow-sm",
+                    "w-full bg-surface-brighter border border-border-main rounded-xl lg:rounded-2xl p-3 lg:p-4 outline-none text-[10px] font-black uppercase tracking-[1px] lg:tracking-[2px] focus:border-accent-gold appearance-none transition-all shadow-sm",
                     formData.type === 'DEBIT' && "text-income border-income/40",
                     formData.type === 'CREDIT' && "text-expense border-expense/40",
                     formData.type === 'SAVING' && "text-accent-gold border-accent-gold/40"
@@ -323,12 +341,12 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                   <option value="SAVING">SAVING</option>
                 </select>
               </div>
-              <div className="space-y-3">
-                <label className="ml-4 text-[10px] font-black uppercase tracking-[2px] text-text-muted">Funding Source</label>
+              <div className="space-y-2">
+                <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Funding Source</label>
                 <select 
                   value={formData.from}
                   onChange={(e) => setFormData(prev => ({ ...prev, from: e.target.value }))}
-                  className="w-full bg-surface-brighter border border-border-main rounded-2xl p-4 outline-none text-[11px] font-bold uppercase tracking-wider focus:border-accent-gold appearance-none shadow-sm"
+                  className="w-full bg-surface-brighter border border-border-main rounded-xl lg:rounded-2xl p-3 lg:p-4 outline-none text-[10px] font-bold uppercase tracking-tight lg:tracking-wider focus:border-accent-gold appearance-none shadow-sm"
                 >
                   <option value="Jazz-Cash">Jazz-Cash</option>
                   <option value="Naya-Pay">Naya-Pay</option>
@@ -339,12 +357,12 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                   <option value="Others">Others</option>
                 </select>
               </div>
-              <div className="space-y-3">
-                <label className="ml-4 text-[10px] font-black uppercase tracking-[2px] text-text-muted">Funding Target</label>
+              <div className="space-y-2">
+                <label className="ml-2 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] text-text-muted">Funding Target</label>
                 <select 
                   value={formData.to}
                   onChange={(e) => setFormData(prev => ({ ...prev, to: e.target.value }))}
-                  className="w-full bg-surface-brighter border border-border-main rounded-2xl p-4 outline-none text-[11px] font-bold uppercase tracking-wider focus:border-accent-gold appearance-none shadow-sm"
+                  className="w-full bg-surface-brighter border border-border-main rounded-xl lg:rounded-2xl p-3 lg:p-4 outline-none text-[10px] font-bold uppercase tracking-tight lg:tracking-wider focus:border-accent-gold appearance-none shadow-sm"
                 >
                   <option value="Jazz-Cash">Jazz-Cash</option>
                   <option value="Naya-Pay">Naya-Pay</option>
@@ -357,7 +375,7 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-2 hidden lg:block">
               <label className="ml-4 text-[10px] font-black uppercase tracking-[3px] text-text-muted">Architectural Category</label>
               <div className="relative group category-dropdown-container">
                 <button
@@ -412,88 +430,85 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="ml-4 text-[10px] font-black uppercase tracking-[3px] text-text-muted">Narrative Notes</label>
+            <div className="space-y-2 lg:space-y-2">
+              <label className="ml-2 lg:ml-4 text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] lg:tracking-[3px] text-text-muted">Narrative Notes</label>
               <textarea 
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Elaborate on specific nuances, serials, or operational details..."
-                rows={4}
-                className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-3xl p-6 outline-none text-sm transition-all resize-none shadow-inner"
+                placeholder="Nuances..."
+                rows={2}
+                className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl lg:rounded-3xl p-3 lg:p-6 outline-none text-xs lg:text-sm transition-all resize-none shadow-inner"
               />
             </div>
 
             {/* Direct Action Hub */}
-            <div className="pt-6 grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div className="pt-2 lg:pt-6 grid grid-cols-2 sm:grid-cols-12 gap-3 lg:gap-4">
               <button
                 type="button"
                 onClick={saveTemplate}
                 disabled={!formData.name || !formData.amount}
-                className="sm:col-span-4 group flex items-center justify-center gap-3 py-5 px-6 bg-surface-brighter border-2 border-border-main rounded-2xl text-[10px] font-black uppercase tracking-[2px] text-text-muted hover:border-accent-gold hover:text-accent-gold transition-all disabled:opacity-30 active:scale-95 shadow-sm"
+                className="col-span-1 sm:col-span-4 group flex items-center justify-center gap-2 lg:gap-3 py-3 lg:py-5 px-3 lg:px-6 bg-surface-brighter border-2 border-border-main rounded-xl lg:rounded-2xl text-[8px] lg:text-[10px] font-black uppercase tracking-[1px] lg:tracking-[2px] text-text-muted hover:border-accent-gold hover:text-accent-gold transition-all disabled:opacity-30 active:scale-95 shadow-sm"
               >
-                <Star size={16} className="group-hover:fill-accent-gold transition-colors" />
-                Index Template
+                <Star size={14} className="group-hover:fill-accent-gold transition-colors" />
+                Template
               </button>
               
               <button
                 onClick={handleSubmit}
                 disabled={loading || !formData.name || !formData.amount}
                 className={cn(
-                  "sm:col-span-8 py-5 px-10 rounded-2xl text-[11px] font-black uppercase tracking-[5px] shadow-2xl flex items-center justify-center gap-4 transition-all active:scale-[0.98] group relative overflow-hidden",
+                  "col-span-1 sm:col-span-8 py-3 lg:py-5 px-4 lg:px-10 rounded-xl lg:rounded-2xl text-[8px] lg:text-[11px] font-black uppercase tracking-[2px] lg:tracking-[5px] shadow-2xl flex items-center justify-center gap-2 lg:gap-4 transition-all active:scale-[0.98] group relative overflow-hidden",
                   (loading || !formData.name || !formData.amount) 
                     ? "bg-surface-brightest border border-border-main text-text-muted cursor-not-allowed opacity-50" 
                     : "bg-accent-gold text-black shadow-accent-gold/30"
                 )}
               >
                 <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                <span>{loading ? 'Finalizing Sync...' : formData.sr ? `Overwrite SR# ${formData.sr}` : 'Commit Transaction'}</span>
+                {loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                <span>{loading ? 'Finalizing...' : formData.sr ? `Update #${formData.sr}` : 'Commit Transaction'}</span>
               </button>
             </div>
             
             <button
               type="button"
               onClick={onCancel}
-              className="w-full py-4 text-[10px] font-black uppercase tracking-[4px] text-text-muted hover:text-expense transition-colors flex items-center justify-center gap-2 border-t border-border-main pt-8 mt-12"
+              className="lg:hidden w-full py-2 text-[8px] font-black uppercase tracking-[3px] text-text-muted hover:text-expense transition-colors flex items-center justify-center gap-2 border-t border-border-main pt-4 mt-2"
             >
-              Exit Ledger Environment
+              Exit Ledger
             </button>
           </div>
 
           {/* Right Column: Information & Utils */}
-          <div className="lg:col-span-4 space-y-8">
-            {/* Search Box */}
-            <div className="bg-surface-brighter border border-border-main rounded-3xl p-6 space-y-6 shadow-xl">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-accent-gold/10 flex items-center justify-center text-accent-gold">
-                    <Eye size={18} />
+          <div className="lg:col-span-4 space-y-4 lg:space-y-8">
+            {/* Search Box - More compact on mobile */}
+            <div className="bg-surface-brighter border border-border-main rounded-2xl lg:rounded-3xl p-4 lg:p-6 space-y-4 lg:space-y-6 shadow-xl" id="mobile-lookup">
+              <div className="space-y-2 lg:space-y-4">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-lg lg:rounded-xl bg-accent-gold/10 flex items-center justify-center text-accent-gold">
+                    <Eye size={14} />
                   </div>
-                  <h4 className="text-[10px] font-black uppercase tracking-[3px] text-text-primary">Historical Lookup</h4>
+                  <h4 className="text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] lg:tracking-[3px] text-text-primary">Historical Lookup</h4>
                 </div>
-                <div className="space-y-2">
+                <div className="flex gap-2">
                   <input 
                     type="number"
-                    placeholder="Reference SR #"
+                    placeholder="SR #"
                     value={searchSr}
                     onChange={(e) => setSearchSr(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && fetchRecord()}
-                    className="w-full bg-surface border border-border-main focus:border-accent-gold rounded-xl py-3 px-5 outline-none text-xs font-mono font-bold transition-all"
+                    className="flex-1 bg-surface border border-border-main focus:border-accent-gold rounded-lg lg:rounded-xl py-2 lg:py-3 px-3 lg:px-5 outline-none text-[10px] font-mono font-bold transition-all"
                   />
                   <button
                     type="button"
                     onClick={fetchRecord}
-                    className="w-full bg-accent-gold px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider text-black hover:opacity-90 transition-all font-display"
+                    className="bg-accent-gold px-4 lg:px-6 py-2 lg:py-3 rounded-lg lg:rounded-xl text-[8px] lg:text-[10px] font-black uppercase tracking-wider text-black hover:opacity-90 transition-all"
                   >
-                    Sync State For Edit
+                    Load
                   </button>
                 </div>
-                <p className="text-[9px] text-text-muted leading-relaxed opacity-60 text-center italic">
-                  Enter any previous SR number to perfectly mirror its state for rapid modifications or corrections.
-                </p>
               </div>
 
-              <div className="pt-6 border-t border-border-main space-y-4">
+              <div className="pt-4 border-t border-border-main space-y-2 hidden lg:block">
                 <div className="flex items-center justify-between">
                   <h4 className="text-[10px] font-black uppercase tracking-[3px] text-text-muted">Usage Stats</h4>
                   <div className="text-[9px] font-bold text-accent-gold opacity-50">REALTIME</div>
@@ -511,49 +526,53 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
               </div>
             </div>
 
-            {/* Quick Templates List */}
-            {templates.length > 0 && (
-              <div className="bg-surface-brighter border border-border-main rounded-3xl p-6 space-y-6">
+            {/* Shortcuts Section */}
+            <div className="bg-surface-brighter border border-border-main rounded-2xl lg:rounded-3xl p-4 lg:p-6 space-y-4 lg:space-y-6 shadow-xl" id="mobile-shortcuts">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Star size={16} className="text-accent-gold" />
-                    <h4 className="text-[10px] font-black uppercase tracking-[3px] text-text-primary">Shortcuts</h4>
+                  <div className="flex items-center gap-2 lg:gap-3">
+                    <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-lg lg:rounded-xl bg-accent-gold/10 flex items-center justify-center text-accent-gold">
+                      <Star size={14} />
+                    </div>
+                    <h4 className="text-[8px] lg:text-[10px] font-black uppercase tracking-[2px] lg:tracking-[3px] text-text-primary">Shortcuts</h4>
                   </div>
-                  <button onClick={() => { setTemplates([]); localStorage.removeItem('account2026_templates'); }} className="text-text-muted hover:text-expense">
-                    <Trash2 size={14} />
-                  </button>
                 </div>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2 lg:gap-3">
                   {templates.map(t => (
                     <div key={t.id} className="relative group">
                       <button
                         type="button"
                         onClick={() => applyTemplate(t)}
-                        className="w-full flex items-center justify-between p-4 bg-surface border border-border-main rounded-2xl hover:border-accent-gold transition-all text-left pr-12"
+                        className="w-full flex items-center justify-between p-3 lg:p-4 bg-surface border border-border-main rounded-xl lg:rounded-2xl hover:border-accent-gold transition-all text-left pr-10 lg:pr-12"
                       >
                         <div className="space-y-0.5">
-                          <p className="text-[11px] font-black text-text-primary group-hover:text-accent-gold transition-colors">{t.name}</p>
-                          <p className="text-[9px] font-mono text-accent-gold">₨ {t.amount}</p>
+                          <p className="text-[9px] lg:text-[11px] font-black text-text-primary group-hover:text-accent-gold transition-colors">{t.name}</p>
+                          <p className="text-[7px] lg:text-[9px] font-mono text-accent-gold">₨ {t.amount}</p>
                         </div>
                       </button>
                       <button
                         onClick={(e) => deleteTemplate(t.id, e)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-text-muted hover:text-expense transition-all opacity-0 group-hover:opacity-100 z-10"
+                        className="absolute right-2 lg:right-3 top-1/2 -translate-y-1/2 p-1 lg:p-2 text-text-muted hover:text-expense transition-all opacity-0 group-hover:opacity-100 z-10"
                         title="Delete Template"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={12} />
                       </button>
                     </div>
                   ))}
+                  {templates.length === 0 && (
+                    <div className="py-6 text-center border-2 border-dashed border-border-main rounded-xl opacity-30">
+                      <p className="text-[8px] font-black uppercase tracking-widest text-text-muted">No Shortcuts Linked</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
 
             {/* System Info */}
-            <div className="p-6 text-center space-y-3 opacity-40">
-              <Landmark size={24} className="mx-auto text-text-muted" />
-              <p className="text-[9px] font-black uppercase tracking-[4px] text-text-muted">
-                End-to-End Encryption &nbsp;·&nbsp; Cloud Commit Ready
+            <div className="p-2 lg:p-6 text-center space-y-1 lg:space-y-3 opacity-40">
+              <Landmark size={20} className="mx-auto text-text-muted lg:size-24" />
+              <p className="text-[7px] lg:text-[9px] font-black uppercase tracking-[2px] lg:tracking-[4px] text-text-muted">
+                Encrypted &nbsp;·&nbsp; Cloud Sync
               </p>
             </div>
           </div>
