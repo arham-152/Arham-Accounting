@@ -415,31 +415,29 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   return (
     <div className="flex flex-col gap-6 mb-12" onClick={() => setActiveNoteSr(null)}>
       <div className="dashboard-card p-0 overflow-hidden flex flex-col mb-4">
-        <div className="p-3 sm:p-5 border-b border-border-main bg-surface/50 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-6">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[2px] text-text-primary">Transaction Register</h3>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main shrink-0">
-                {filteredTransactions.length} / {transactions.length}
-              </span>
-              <div className="flex items-center gap-2 group cursor-pointer px-2 py-0.5 bg-surface-brighter rounded border border-border-main">
-                <input 
-                  type="checkbox" 
-                  id="show-summary-toggle"
-                  checked={showSummary}
-                  onChange={(e) => setShowSummary(e.target.checked)}
-                  className="w-3 h-3 rounded border-border-main bg-surface shadow-inner text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
-                />
-                <label htmlFor="show-summary-toggle" className="text-[9px] font-bold text-text-muted group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-tighter whitespace-nowrap">
-                  Summary
-                </label>
-              </div>
-            </div>
+        <div className="p-4 sm:p-5 border-b border-border-main flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 bg-surface/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <h3 className="text-xs font-bold m-0 text-text-primary whitespace-nowrap">Transaction Register</h3>
+            <span className="font-mono text-[9px] sm:text-[10px] text-text-muted px-2 py-0.5 bg-surface-brighter rounded border border-border-main shrink-0">
+              {filteredTransactions.length} of {transactions.length} entries
+            </span>
           </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
+            <div className="flex items-center gap-2 group cursor-pointer">
+              <input 
+                type="checkbox" 
+                id="show-summary-toggle"
+                checked={showSummary}
+                onChange={(e) => setShowSummary(e.target.checked)}
+                className="w-4 h-4 rounded border-border-main bg-surface-brighter text-accent-gold focus:ring-accent-gold/20 cursor-pointer"
+              />
+              <label htmlFor="show-summary-toggle" className="text-[10px] font-bold text-text-secondary group-hover:text-text-primary transition-colors cursor-pointer uppercase tracking-widest whitespace-nowrap">
+                Summary
+              </label>
+            </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-            <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-xl border border-border-main flex-1 sm:flex-none">
-              <span className="text-[8px] font-black text-text-muted uppercase tracking-widest shrink-0">Mode:</span>
+            <div className="flex items-center gap-2 bg-surface-brighter px-3 py-1.5 rounded-lg border border-border-main w-full sm:w-auto">
+              <span className="text-[8px] sm:text-[9px] font-black text-text-secondary uppercase tracking-widest shrink-0 opacity-80">Mode:</span>
               <select 
                 value={ledgerModeCategory || ''} 
                 onChange={(e) => setLedgerModeCategory(e.target.value || null)}
@@ -451,35 +449,34 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 ))}
               </select>
             </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-48 lg:w-64">
-                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-                <input 
-                  type="text" 
-                  value={tableSearch}
-                  onChange={(e) => setTableSearch(e.target.value)}
-                  placeholder="Search ledger..."
-                  className="bg-surface-brighter border border-border-main text-text-primary text-[11px] pl-8 pr-3 py-1.5 rounded-xl outline-none focus:border-accent-gold transition-colors w-full"
-                />
-              </div>
-              
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleReport('PDF'); }}
-                  className="p-2 bg-accent-gold/10 hover:bg-accent-gold text-accent-gold hover:text-black rounded-xl border border-accent-gold/20 transition-all active:scale-90"
-                  title="PDF Report"
-                >
-                  <ReportIcon size={14} />
-                </button>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleReport('EXCEL'); }}
-                  className="p-2 bg-surface-brighter hover:bg-white/10 text-text-muted hover:text-text-primary rounded-xl border border-border-main transition-all active:scale-90"
-                  title="Excel Export"
-                >
-                  <Download size={14} />
-                </button>
-              </div>
+            <div className="relative w-full sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input 
+                type="text" 
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                placeholder="Search..."
+                className="bg-surface-brighter border border-border-main text-text-primary text-xs pl-9 pr-3 py-1.5 rounded-lg outline-none focus:border-accent-gold transition-colors w-full"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleReport('PDF'); }}
+                className="flex items-center gap-2 bg-accent-gold/10 hover:bg-accent-gold text-accent-gold hover:text-black px-3 py-1.5 rounded-lg border border-accent-gold/20 text-[10px] font-bold transition-all active:scale-95 whitespace-nowrap"
+                title="Download Filtered PDF"
+              >
+                <ReportIcon size={12} />
+                <span className="hidden lg:inline">PDF</span>
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleReport('EXCEL'); }}
+                className="flex items-center gap-2 bg-surface-brighter hover:bg-white/10 text-text-muted hover:text-text-primary px-3 py-1.5 rounded-lg border border-border-main text-[10px] font-bold transition-all active:scale-95 whitespace-nowrap"
+                title="Download Filtered Excel"
+              >
+                <Download size={12} />
+                <span className="hidden lg:inline">Excel</span>
+              </button>
             </div>
           </div>
         </div>
@@ -588,38 +585,39 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         )}
         
         {/* Register Summary Footer */}
-        <div className="p-3 sm:p-5 bg-surface border-t border-border-main flex flex-col lg:flex-row items-center justify-between gap-4">
-          <div className="grid grid-cols-3 gap-2 sm:gap-6 w-full lg:w-auto">
+        <div className="p-4 bg-surface border-t border-border-main flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex flex-col">
-              <span className="text-[8px] sm:text-[10px] text-text-muted font-black uppercase tracking-widest">Income</span>
-              <span className="text-xs sm:text-sm font-mono font-bold text-income truncate">{formatPKR(registerSummary.income)}</span>
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Total Income</span>
+              <span className="text-sm font-mono font-bold text-income">{formatPKR(registerSummary.income)}</span>
             </div>
-            <div className="flex flex-col border-l border-border-main/50 pl-2 sm:pl-6">
-              <span className="text-[8px] sm:text-[10px] text-text-muted font-black uppercase tracking-widest">Expense</span>
-              <span className="text-xs sm:text-sm font-mono font-bold text-expense truncate">{formatPKR(registerSummary.expense)}</span>
+            <div className="hidden sm:block w-px h-8 bg-border-main" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Total Expense</span>
+              <span className="text-sm font-mono font-bold text-expense">{formatPKR(registerSummary.expense)}</span>
             </div>
-            <div className="flex flex-col border-l border-border-main/50 pl-2 sm:pl-6">
-              <span className="text-[8px] sm:text-[10px] text-text-muted font-black uppercase tracking-widest">Savings</span>
-              <span className="text-xs sm:text-sm font-mono font-bold text-saving truncate">{formatPKR(registerSummary.saving)}</span>
+            <div className="hidden sm:block w-px h-8 bg-border-main" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Savings</span>
+              <span className="text-sm font-mono font-bold text-saving">{formatPKR(registerSummary.saving)}</span>
             </div>
           </div>
           
-          <div className="w-full lg:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-surface-brighter rounded-xl border border-border-main flex items-center justify-between lg:justify-start gap-4 shadow-inner">
-            <div className="flex flex-col items-start lg:items-end">
-              <span className="text-[8px] sm:text-[10px] text-text-muted font-black uppercase tracking-widest">Filtered Position</span>
+          <div className="w-full sm:w-auto px-4 sm:px-6 py-3 bg-surface-brighter rounded-xl border border-border-main flex items-center justify-between sm:justify-start gap-4">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Net Filtered Balance</span>
               <span className={cn(
-                "text-lg sm:text-xl font-display font-black tracking-tighter leading-none mt-1",
+                "text-xl font-display font-black tracking-tighter",
                 registerSummary.net >= 0 ? "text-income" : "text-expense"
               )}>
                 {formatPKR(registerSummary.net)}
               </span>
             </div>
             <div className={cn(
-              "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg shrink-0",
+              "w-10 h-10 rounded-full flex items-center justify-center shadow-lg",
               registerSummary.net >= 0 ? "bg-income text-black" : "bg-expense text-white"
             )}>
-              <Wallet size={16} className="sm:hidden" />
-              <Wallet size={20} className="hidden sm:block" />
+              <Wallet size={20} />
             </div>
           </div>
         </div>

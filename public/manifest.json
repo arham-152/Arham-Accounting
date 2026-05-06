@@ -1,21 +1,22 @@
 {
-  "name": "Arham Tahir Personal Ledger 2026",
-  "short_name": "Ledger 2026",
-  "description": "Premium Financial Ledger and Wealth Tracker",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0a0c10",
-  "theme_color": "#d4af37",
+  "short_name": "Account",
+  "name": "Account",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2854/2854494.png",
+      "src": "/logo-app.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2854/2854494.png",
+      "src": "/logo-app.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0a0c10",
+  "background_color": "#0a0c10"
 }
