@@ -7,6 +7,7 @@ import { KPICard } from './components/KPICard';
 import { Charts } from './components/Charts';
 import { AnalysisPanels } from './components/AnalysisPanels';
 import { BudgetSection } from './components/BudgetSection';
+import { FinancialInsights } from './components/FinancialInsights';
 import { TransactionTable } from './components/TransactionTable';
 import { WealthTracker, Asset } from './components/WealthTracker';
 import { SavingsGoals, SavingsGoal } from './components/SavingsGoals';
@@ -100,7 +101,10 @@ export default function App() {
     category: '',
     type: '',
     channel: '',
-    search: ''
+    search: '',
+    startDate: '',
+    endDate: '',
+    borrowStatus: 'All' as 'All' | 'Owed' | 'Gets'
   });
 
   const [budgets, setBudgets] = useState<Record<string, number>>(() => {
@@ -285,7 +289,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    syncFinancialData(csvUrl);
+    if (csvUrl) {
+      syncFinancialData(csvUrl);
+    }
   }, [csvUrl]);
 
   const filteredData = useMemo(() => {
@@ -294,6 +300,8 @@ export default function App() {
       if (filters.year && r.year !== filters.year) return false;
       if (filters.category && r.category !== filters.category) return false;
       if (filters.type && r.type !== filters.type) return false;
+      if (filters.startDate && r.date < filters.startDate) return false;
+      if (filters.endDate && r.date > filters.endDate) return false;
       if (filters.channel) {
         if (filters.channel === 'CASH' && r.from !== 'CASH') return false;
         if (filters.channel === 'Jazz-Cash' && r.from !== 'Jazz-Cash') return false;
@@ -306,49 +314,39 @@ export default function App() {
   const categories = useMemo(() => [...new Set(allData.map(r => r.category))].filter(Boolean), [allData]);
 
   const kpis = useMemo(() => {
-    const income = filteredData.filter(r => r.type === 'DEBIT' && ['SALARY', 'INCOME', 'INCOM'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0);
-    const expense = filteredData.filter(r => r.type === 'CREDIT' && !['BORROW', 'TRANSFER', 'SAVING'].includes((r.category || '').toUpperCase())).reduce((s, r) => s + r.amount, 0);
+    // Utility for checking categories/types safely
+    const isCat = (c: string | undefined, target: string) => (c || '').toUpperCase() === target.toUpperCase();
     
-    // Just sum of "borrow" amount as requested
-    const borrow = filteredData.filter(r => (r.category || '').toUpperCase() === 'BORROW').reduce((s, r) => s + r.amount, 0);
+    const income = filteredData
+      .filter(r => r.type === 'DEBIT' && ['SALARY', 'INCOME', 'INCOM'].includes((r.category || '').toUpperCase()))
+      .reduce((s, r) => s + r.amount, 0);
+
+    const expense = filteredData
+      .filter(r => r.type === 'CREDIT' && !['BORROW', 'TRANSFER', 'SAVING'].includes((r.category || '').toUpperCase()))
+      .reduce((s, r) => s + r.amount, 0);
     
-    // Only sum of "saving" type/category as requested
-    const savings = filteredData.filter(r => r.type === 'SAVING' || (r.category || '').toUpperCase() === 'SAVING').reduce((s, r) => s + r.amount, 0);
+    const borrow = filteredData.filter(r => isCat(r.category, 'BORROW')).reduce((s, r) => s + r.amount, 0);
+    const savings = filteredData.filter(r => r.type === 'SAVING' || isCat(r.category, 'SAVING')).reduce((s, r) => s + r.amount, 0);
     
-    const isCashArr = (c: string) => (c || '').toUpperCase() === 'CASH';
-    const isAccountArr = (c: string) => {
+    // Position logic
+    const isCashAccount = (c: string) => (c || '').toUpperCase() === 'CASH';
+    const isDigitalAccount = (c: string) => {
       const u = (c || '').toUpperCase();
       return u !== 'CASH' && u !== 'OTHER' && u !== '';
     };
 
-    // Cash Logic following user's precise step guide - responsive to filters
-    const cashData = filteredData;
-    // A: SUM TOTAL DEBIT CASH (Income directly into cash)
-    const cashA = cashData.filter(r => isCashArr(r.to) && r.type === 'DEBIT' && (r.category || '').toUpperCase() !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
-    // B: SUM TOTAL CASH CONVERTED FROM JAZZCASH/OTHERS TO CASH (Transfer To Cash)
-    const cashB = cashData.filter(r => (r.category || '').toUpperCase() === 'TRANSFER' && isCashArr(r.to)).reduce((s, r) => s + r.amount, 0);
-    // C: SUM OF TOTAL CREDIT CASH (Standard expenses paid via cash)
-    const cashC = cashData.filter(r => isCashArr(r.from) && r.type === 'CREDIT' && (r.category || '').toUpperCase() !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
-    // D: SUM OF TOTAL CASH CONVERTED OR TRANSFER TO JAZZCASH/OTHERS (Transfer From Cash)
-    const cashD = cashData.filter(r => isCashArr(r.from) && (r.category || '').toUpperCase() === 'TRANSFER').reduce((s, r) => s + r.amount, 0);
+    const getBalance = (accountFilter: (acc: string) => boolean) => {
+      const inflow = filteredData.filter(r => accountFilter(r.to) && (r.type === 'DEBIT' || isCat(r.category, 'TRANSFER'))).reduce((s, r) => s + r.amount, 0);
+      const outflow = filteredData.filter(r => accountFilter(r.from) && (r.type === 'CREDIT' || isCat(r.category, 'TRANSFER'))).reduce((s, r) => s + r.amount, 0);
+      return inflow - outflow;
+    };
+
+    const totalCash = getBalance(isCashAccount);
+    const totalAccounts = getBalance(isDigitalAccount);
     
-    const totalCash = (cashA + cashB) - (cashC + cashD);
-    
-    // Total Accounts Balance (Mirrored Logic for everything not 'CASH')
-    const accData = filteredData;
-    // A': Income into digital accounts
-    const accA = accData.filter(r => isAccountArr(r.to) && r.type === 'DEBIT' && (r.category || '').toUpperCase() !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
-    // B': Transferred into digital accounts from elsewhere
-    const accB = accData.filter(r => (r.category || '').toUpperCase() === 'TRANSFER' && isAccountArr(r.to)).reduce((s, r) => s + r.amount, 0);
-    // C': Expenses from digital accounts
-    const accC = accData.filter(r => isAccountArr(r.from) && r.type === 'CREDIT' && (r.category || '').toUpperCase() !== 'TRANSFER').reduce((s, r) => s + r.amount, 0);
-    // D': Transferred from digital accounts to elsewhere
-    const accD = accData.filter(r => isAccountArr(r.from) && (r.category || '').toUpperCase() === 'TRANSFER').reduce((s, r) => s + r.amount, 0);
-    
-    const totalAccounts = (accA + accB) - (accC + accD);
-    
-    // Net Borrow Standing (Positive = Owed to us, Negative = We owe)
-    const borrowNet = filteredData.filter(r => (r.category || '').toUpperCase() === 'BORROW').reduce((s, r) => s + (r.type === 'CREDIT' ? r.amount : -r.amount), 0);
+    const borrowNet = filteredData
+      .filter(r => isCat(r.category, 'BORROW'))
+      .reduce((s, r) => s + (r.type === 'CREDIT' ? r.amount : -r.amount), 0);
     
     return { income, expense, net: income - expense, borrow, savings, totalCash, totalAccounts, borrowNet };
   }, [filteredData]);
@@ -587,7 +585,7 @@ export default function App() {
                 filters={filters}
                 categories={categories}
                 setFilters={setFilters}
-                resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '' })}
+                resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '', startDate: '', endDate: '', borrowStatus: 'All' })}
               />
             </motion.div>
           )}
@@ -702,6 +700,15 @@ export default function App() {
                   </>
                 )}
               </div>
+            </section>
+
+            {/* Financial Insights */}
+            <section className="animate-in fade-in slide-in-from-bottom-2 duration-700 delay-100">
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Mobile Balance Insights</h2>
+                <div className="flex-1 h-px bg-border-main" />
+              </div>
+              <FinancialInsights transactions={allData} budgets={budgets} />
             </section>
 
             {/* Charts Section */}
@@ -859,6 +866,7 @@ export default function App() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleAddTransaction}
+        transactions={allData}
       />
 
       <ReportModal

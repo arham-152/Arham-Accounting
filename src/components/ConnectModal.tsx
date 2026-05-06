@@ -179,7 +179,6 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) throw new Error("Could not access active spreadsheet. Check permissions.");
     
-    // Use "Active" sheet, or fallback to the FIRST sheet if "Active" doesn't exist
     let s = ss.getSheetByName("Active");
     if (!s) {
        s = ss.getSheets()[0];
@@ -190,24 +189,41 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
     const d = JSON.parse(e.postData.contents);
     const date = d.date || new Date().toISOString().split('T')[0];
 
-    // Find first empty row by checking Column B (Date)
-    const lastRow = s.getLastRow();
-    const data = s.getRange(1, 2, Math.max(lastRow, 10)).getValues();
-    let targetRow = 1;
+    let targetRow = -1;
     
-    // Scan from bottom to find last entry in Column B
-    for (let i = data.length - 1; i >= 0; i--) {
-      if (data[i][0]) {
-        targetRow = i + 2;
-        break;
+    // UPDATE LOGIC: If SR is provided, find that row
+    if (d.sr && !isNaN(d.sr)) {
+      const srToFind = Number(d.sr);
+      const lastRow = s.getLastRow();
+      if (lastRow >= 5) {
+        const srValues = s.getRange(5, 1, Math.max(lastRow - 4, 1)).getValues();
+        for (let i = 0; i < srValues.length; i++) {
+          if (Number(srValues[i][0]) === srToFind) {
+            targetRow = i + 5;
+            break;
+          }
+        }
       }
     }
-    
-    // Ensure we don't write before header area (Start at row 5 as per standard template)
-    if (targetRow < 5) targetRow = 5;
 
+    // CREATE LOGIC: If not an update, find next empty row
+    if (targetRow === -1) {
+      const lastRow = s.getLastRow();
+      const colBData = s.getRange(1, 2, Math.max(lastRow, 10)).getValues();
+      targetRow = 1;
+      
+      for (let i = colBData.length - 1; i >= 0; i--) {
+        if (colBData[i][0]) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+      
+      if (targetRow < 5) targetRow = 5;
+    }
+    
     // A=SR, B=Date, C=Name, D=Amount, E=Category, F=Type, G=From, H=To, I=Notes
-    // We update B through I. 
+    // We update Columns B through I
     const range = s.getRange(targetRow, 2, 1, 8); 
     range.setValues([[
       date, 
@@ -220,13 +236,23 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose, onC
       d.notes
     ]]);
     
-    // Auto-increment SR in Column A if empty
+    // Auto-increment SR in Column A if empty (for new entries)
     const srCell = s.getRange(targetRow, 1);
     if (!srCell.getValue()) {
-      srCell.setValue(targetRow - 4); // Assuming header ends at row 4
+      // Find highest SR in column A to ensure unique increment
+      const lastRowNow = s.getLastRow();
+      let maxSr = 0;
+      if (lastRowNow >= 5) {
+        const srValues = s.getRange(5, 1, lastRowNow - 4).getValues();
+        srValues.forEach(row => {
+          const val = Number(row[0]);
+          if (!isNaN(val) && val > maxSr) maxSr = val;
+        });
+      }
+      srCell.setValue(maxSr + 1);
     }
     
-    return ContentService.createTextOutput("OK - Saved to " + s.getName() + " row " + targetRow)
+    return ContentService.createTextOutput("OK - Processed Row " + targetRow)
       .setMimeType(ContentService.MimeType.TEXT);
   } catch (err) {
     return ContentService.createTextOutput("Error: " + err.message)
