@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { X, Save, Calendar, Tag, CreditCard, Landmark, FileText, Loader2, Star, Trash2, Search, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Save, Calendar, Tag, CreditCard, Landmark, FileText, Loader2, Star, Trash2, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { EXPENSE_CATEGORIES, MONTH_NAMES, Transaction } from '../types';
@@ -15,7 +15,6 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
   const [loading, setLoading] = useState(false);
   const [searchSr, setSearchSr] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     sr: '',
@@ -28,24 +27,6 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
     to: 'CASH',
     notes: ''
   });
-
-  // Calculate most frequent names for autocomplete
-  const suggestions = useMemo(() => {
-    if (!formData.name || formData.name.length < 1) return [];
-    
-    const freq: Record<string, number> = {};
-    transactions.forEach(t => {
-      if (t.name) {
-        freq[t.name] = (freq[t.name] || 0) + 1;
-      }
-    });
-
-    const search = formData.name.toLowerCase();
-    return Object.keys(freq)
-      .filter(name => name.toLowerCase().includes(search))
-      .sort((a, b) => freq[b] - freq[a]) // Sort by frequency (most used first)
-      .slice(0, 10);
-  }, [transactions, formData.name]);
 
   // Load templates from localStorage and handle modal state reset
   useEffect(() => {
@@ -288,54 +269,19 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
               </div>
 
               {/* Reference Name */}
-              <div className="space-y-2 relative">
+              <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Reference / Person</label>
                 <div className="relative">
-                  <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                  <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
                   <input 
                     type="text" 
                     value={formData.name}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, name: e.target.value }));
-                      setShowSuggestions(true);
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => {
-                      // Small delay to allow clicking a suggestion
-                      setTimeout(() => setShowSuggestions(false), 200);
-                    }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     required
                     placeholder="Who or What? (e.g. Aslam, Fuel, Grocery)"
-                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl py-3 pl-12 pr-4 outline-none text-sm transition-all font-bold"
+                    className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl py-3 pl-12 pr-4 outline-none text-sm transition-all"
                   />
                 </div>
-
-                {/* Autocomplete Suggestions */}
-                <AnimatePresence>
-                  {showSuggestions && suggestions.length > 0 && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-0 right-0 z-[60] mt-1 bg-surface-brightest border border-border-main rounded-xl shadow-2xl overflow-hidden max-h-[160px] overflow-y-auto custom-scrollbar"
-                    >
-                      {suggestions.map((name, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => {
-                            setFormData(prev => ({ ...prev, name }));
-                            setShowSuggestions(false);
-                          }}
-                          className="w-full text-left px-4 py-2.5 hover:bg-accent-gold hover:text-black transition-colors flex items-center justify-between group"
-                        >
-                          <span className="text-xs font-bold">{name}</span>
-                          <Check size={12} className="opacity-0 group-hover:opacity-100" />
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
