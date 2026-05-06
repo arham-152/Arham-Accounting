@@ -521,29 +521,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
                     onClick={() => setSelectedTransaction(r)}
-                    className={cn("hover:bg-accent-gold/[0.02] transition-colors cursor-pointer group border-b border-border-main/10", idx % 2 === 0 ? "bg-transparent" : "bg-surface-brighter/10")}
+                    className={cn("hover:bg-accent-gold/[0.05] transition-colors cursor-pointer group border-b border-border-main/30", idx % 2 === 0 ? "bg-transparent" : "bg-surface-brighter/20")}
                   >
                     <td className="hidden sm:table-cell p-3 font-mono text-[10px] text-text-muted">{r.sr}</td>
-                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] whitespace-nowrap text-text-secondary">
-                      {window.innerWidth < 640 ? (r.date || '').split('-').slice(1).join('/') : (r.date || '—')}
-                    </td>
-                    <td className="p-2 sm:p-3">
-                      <div className="flex flex-col">
-                        <span className="text-[11px] sm:text-xs font-bold text-text-primary group-hover:text-accent-gold transition-colors line-clamp-1">{r.name || '—'}</span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className={cn(
-                            "text-[8px] px-1 rounded uppercase font-black tracking-tighter",
-                            r.type === 'DEBIT' ? "bg-income/10 text-income" : 
-                            r.type === 'CREDIT' ? "bg-expense/10 text-expense" : 
-                            "bg-saving/10 text-saving"
-                          )}>
-                            {r.category || 'Misc'}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] whitespace-nowrap text-text-secondary">{r.date || '—'}</td>
+                    <td className="p-2 sm:p-3 font-semibold truncate max-w-[120px] sm:max-w-[180px] text-text-primary text-[11px] sm:text-[12px]" title={r.name}>{r.name || '—'}</td>
                     <td className={cn("p-2 sm:p-3 font-mono font-bold text-right sm:text-left text-[11px] sm:text-[12px]", 
-                      r.type === 'DEBIT' ? "text-income" : r.type === 'CREDIT' ? "text-expense" : "text-saving"
+                      r.type === 'DEBIT' ? "text-income" : r.type === 'CREDIT' ? "text-expense" : "text-text-muted"
                     )}>
                       {formatPKR(r.amount)}
                     </td>
@@ -569,11 +553,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     </td>
                     <td className="hidden xl:table-cell p-3 text-[10px] text-text-muted capitalize">{r.from}</td>
                     <td className="hidden xl:table-cell p-3 text-[10px] text-accent-gold/80 font-medium capitalize">{r.to}</td>
-                    <td className="p-2 sm:p-3 text-right">
-                       {r.notes ? (
-                         <div className="w-1.5 h-1.5 rounded-full bg-accent-gold/40 ml-auto" />
-                       ) : <span className="text-text-muted/20 text-[10px]">—</span>}
-                    </td>
+                    <td className="p-2 sm:p-3 text-[10px] text-text-primary font-medium italic whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] sm:max-w-[200px]" title={r.notes}>{r.notes || '—'}</td>
                   </motion.tr>
                 ))}
               </AnimatePresence>
