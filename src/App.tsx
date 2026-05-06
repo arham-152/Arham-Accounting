@@ -113,7 +113,10 @@ export default function App() {
   };
 
   useEffect(() => {
-    localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
+    try {
+      localStorage.setItem('account2026_theme', isDarkMode ? 'dark' : 'light');
+    } catch (e) {}
+    
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -122,7 +125,9 @@ export default function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    localStorage.setItem('account2026_privacy', hideAmounts.toString());
+    try {
+      localStorage.setItem('account2026_privacy', hideAmounts.toString());
+    } catch (e) {}
   }, [hideAmounts]);
 
   const [filters, setFilters] = useState({
@@ -168,15 +173,21 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('account2026_budgets', JSON.stringify(budgets));
+    try {
+      localStorage.setItem('account2026_budgets', JSON.stringify(budgets));
+    } catch (e) {}
   }, [budgets]);
 
   useEffect(() => {
-    localStorage.setItem('account2026_wealth', JSON.stringify(wealthAssets));
+    try {
+      localStorage.setItem('account2026_wealth', JSON.stringify(wealthAssets));
+    } catch (e) {}
   }, [wealthAssets]);
 
   useEffect(() => {
-    localStorage.setItem('account2026_goals', JSON.stringify(savingsGoals));
+    try {
+      localStorage.setItem('account2026_goals', JSON.stringify(savingsGoals));
+    } catch (e) {}
   }, [savingsGoals]);
 
   useEffect(() => {
@@ -188,13 +199,17 @@ export default function App() {
   useEffect(() => {
     // Save CSV URL when it changes
     if (csvUrl) {
-      localStorage.setItem('account2026_csv_url', csvUrl);
+      try {
+        localStorage.setItem('account2026_csv_url', csvUrl);
+      } catch (e) {}
     }
   }, [csvUrl]);
 
   useEffect(() => {
     if (syncUrl) {
-      localStorage.setItem('account2026_sync_url', syncUrl);
+      try {
+        localStorage.setItem('account2026_sync_url', syncUrl);
+      } catch (e) {}
     }
   }, [syncUrl]);
 

@@ -34,7 +34,8 @@ Cloudflare Pages is the easiest way to host this application.
 If you connect your GitHub repository:
 1. Set the **Framework preset**: `Vite` (or `None`).
 2. Set the **Build command**: `npm run build`
-3. Set the **Build output directory**: `dist`
+3. **CRITICAL**: Set the **Build output directory** to `dist`.
+   * *Note: If you leave this as "public" or "/", the app will NOT load.*
 4. Deploy!
 
 ---
