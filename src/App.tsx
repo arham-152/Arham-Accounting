@@ -873,6 +873,7 @@ export default function App() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleAddTransaction}
+        transactions={allData}
       />
 
       <ReportModal

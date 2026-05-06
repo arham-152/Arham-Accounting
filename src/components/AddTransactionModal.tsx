@@ -8,11 +8,15 @@ interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => Promise<boolean>;
+  transactions?: any[];
 }
 
-export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onSubmit }) => {
+export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onSubmit, transactions = [] }) => {
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     name: '',
@@ -71,6 +75,61 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
       to: template.to,
       notes: template.notes || ''
     }));
+    setShowSuggestions(false);
+  };
+
+  // Autocomplete logic
+  useEffect(() => {
+    if (!formData.name || formData.name.length < 1) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const uniqueNames = Array.from(new Set(transactions.map(t => t.name)))
+      .filter(name => name && name.toLowerCase().includes(formData.name.toLowerCase()) && name.toLowerCase() !== formData.name.toLowerCase());
+    
+    setSuggestions(uniqueNames.slice(0, 5)); // Show top 5 matches
+    setShowSuggestions(uniqueNames.length > 0);
+  }, [formData.name, transactions]);
+
+  // Click outside and escape handler
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.autocomplete-container')) {
+        setShowSuggestions(false);
+      }
+    };
+
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowSuggestions(false);
+    };
+
+    if (showSuggestions) {
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleEsc);
+    }
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [showSuggestions]);
+
+  const selectSuggestion = (name: string) => {
+    // Find a previous transaction with this name to auto-fill other fields if possible
+    const prevTrans = transactions.find(t => t.name === name);
+    
+    setFormData(prev => ({
+      ...prev,
+      name,
+      category: prevTrans?.category || prev.category,
+      type: prevTrans?.type || prev.type,
+      from: prevTrans?.from || prev.from,
+      to: prevTrans?.to || prev.to
+    }));
+    setShowSuggestions(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -171,7 +230,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
               </div>
 
               {/* Reference Name */}
-              <div className="space-y-2">
+              <div className="space-y-2 relative autocomplete-container">
                 <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted">Reference / Person</label>
                 <div className="relative">
                   <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -179,11 +238,38 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                     type="text" 
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onFocus={() => {
+                        if (suggestions.length > 0) setShowSuggestions(true);
+                    }}
                     required
                     placeholder="Who or What? (e.g. Aslam, Fuel, Grocery)"
                     className="w-full bg-surface-brighter border border-border-main focus:border-accent-gold rounded-xl py-3 pl-12 pr-4 outline-none text-sm transition-all"
                   />
                 </div>
+
+                {/* Autocomplete Suggestions */}
+                <AnimatePresence>
+                  {showSuggestions && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute z-[160] left-0 right-0 top-full mt-1 bg-surface-brighter border border-border-main rounded-xl shadow-2xl overflow-hidden"
+                    >
+                      {suggestions.map((name, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => selectSuggestion(name)}
+                          className="w-full text-left px-4 py-2.5 text-xs text-text-primary hover:bg-accent-gold hover:text-black transition-colors flex items-center gap-3 border-b border-white/5 last:border-0"
+                        >
+                          <FileText size={12} className="opacity-40" />
+                          <span className="font-bold">{name}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
