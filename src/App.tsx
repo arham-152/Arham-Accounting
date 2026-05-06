@@ -643,7 +643,7 @@ export default function App() {
       )}>
         {currentView === 'quick-entry' && (
           <div className="animate-in fade-in zoom-in-95 duration-500 h-full p-2 sm:p-4 bg-background">
-            <div className="flex items-center justify-between mb-4 px-4 pt-2">
+            <div className="hidden sm:flex items-center justify-between mb-4 px-4 pt-2">
               <h2 className="text-[10px] font-black text-accent-gold uppercase tracking-[5px] flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-accent-gold animate-pulse" />
                 Ledger Terminal Phase-1
@@ -656,7 +656,7 @@ export default function App() {
                 Abort Session
               </button>
             </div>
-            <div className="bg-surface border border-border-main rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] h-[calc(100%-60px)]">
+            <div className="bg-surface border border-border-main rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] h-full sm:h-[calc(100%-60px)]">
               <AddTransactionForm 
                 onSubmit={handleAddTransaction}
                 transactions={allData}
@@ -889,7 +889,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-border-main p-8 text-center bg-surface-brighter selection:bg-accent-gold/10 mt-auto">
+      <footer className="hidden sm:block border-t border-border-main p-8 text-center bg-surface-brighter selection:bg-accent-gold/10 mt-auto">
         <div className="max-w-7xl mx-auto">
           <div className="text-[10px] text-text-muted font-mono tracking-widest uppercase mb-2">
             Professional Fiscal Environment &nbsp;·&nbsp; Account 2026 Engine
