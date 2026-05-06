@@ -39,7 +39,7 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
     type: 'CREDIT',
     date: new Date().toISOString().split('T')[0],
     from: 'CASH',
-    to: 'OTHER',
+    to: 'Others',
     notes: ''
   });
 
@@ -173,7 +173,7 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
       type: 'CREDIT',
       date: new Date().toISOString().split('T')[0],
       from: 'CASH',
-      to: 'OTHER',
+      to: 'Others',
       notes: ''
     });
   };
@@ -313,12 +313,14 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                   className={cn(
                     "w-full bg-surface-brighter border border-border-main rounded-2xl p-4 outline-none text-[11px] font-black uppercase tracking-[2px] focus:border-accent-gold appearance-none transition-all shadow-sm",
                     formData.type === 'DEBIT' && "text-income border-income/40",
-                    formData.type === 'CREDIT' && "text-expense border-expense/40"
+                    formData.type === 'CREDIT' && "text-expense border-expense/40",
+                    formData.type === 'SAVING' && "text-accent-gold border-accent-gold/40"
                   )}
                 >
-                  <option value="DEBIT">Financial Intake</option>
-                  <option value="CREDIT">Financial Outgo</option>
-                  <option value="TRANSFER">Asset Transfer</option>
+                  <option value="CREDIT">CREDIT</option>
+                  <option value="DEBIT">DEBIT</option>
+                  <option value="TRANSFER">TRANSFER</option>
+                  <option value="SAVING">SAVING</option>
                 </select>
               </div>
               <div className="space-y-3">
@@ -328,10 +330,13 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                   onChange={(e) => setFormData(prev => ({ ...prev, from: e.target.value }))}
                   className="w-full bg-surface-brighter border border-border-main rounded-2xl p-4 outline-none text-[11px] font-bold uppercase tracking-wider focus:border-accent-gold appearance-none shadow-sm"
                 >
-                  <option value="CASH">Liquid Reserve (Cash)</option>
-                  <option value="Jazz-Cash">Jazz-Cash Wallet</option>
-                  <option value="BANK">Vault Storage (Bank)</option>
-                  <option value="OTHER">Diversified Source</option>
+                  <option value="Jazz-Cash">Jazz-Cash</option>
+                  <option value="Naya-Pay">Naya-Pay</option>
+                  <option value="Sada-Pay">Sada-Pay</option>
+                  <option value="Easy-Paisa">Easy-Paisa</option>
+                  <option value="Bank Account">Bank Account</option>
+                  <option value="CASH">CASH</option>
+                  <option value="Others">Others</option>
                 </select>
               </div>
               <div className="space-y-3">
@@ -341,10 +346,13 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ onSubmit
                   onChange={(e) => setFormData(prev => ({ ...prev, to: e.target.value }))}
                   className="w-full bg-surface-brighter border border-border-main rounded-2xl p-4 outline-none text-[11px] font-bold uppercase tracking-wider focus:border-accent-gold appearance-none shadow-sm"
                 >
-                  <option value="OTHER">External Liquidation</option>
-                  <option value="CASH">Reserve Deposit (Cash)</option>
-                  <option value="Jazz-Cash">Jazz-Cash Wallet</option>
-                  <option value="BANK">Asset Deposit (Bank)</option>
+                  <option value="Jazz-Cash">Jazz-Cash</option>
+                  <option value="Naya-Pay">Naya-Pay</option>
+                  <option value="Sada-Pay">Sada-Pay</option>
+                  <option value="Easy-Paisa">Easy-Paisa</option>
+                  <option value="Bank Account">Bank Account</option>
+                  <option value="CASH">CASH</option>
+                  <option value="Others">Others</option>
                 </select>
               </div>
             </div>
