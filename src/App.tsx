@@ -553,335 +553,13 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen bg-bg selection:bg-accent-gold/20 selection:text-accent-gold overflow-x-hidden">
-      <header className="sticky top-0 z-50">
-        <Navbar 
-          onConnectClick={() => setIsModalOpen(true)}
-          onUploadClick={() => document.getElementById('file-upload-dialog')?.click()}
-          onExportCSV={handleExport}
-          onReportClick={() => setIsReportModalOpen(true)}
-          onRefreshClick={() => syncFinancialData(csvUrl)}
-          isDarkMode={isDarkMode}
-          onThemeToggle={() => setIsDarkMode(!isDarkMode)}
-          lastUpdated={lastUpdated}
-          status={(error || dataSource === 'file') ? 'offline' : 'online'}
-          activeView={currentView}
-          onViewChange={setCurrentView}
-          onToggleFilters={() => setShowMobileFilters(!showMobileFilters)}
-          showFilters={showMobileFilters}
-          onAddClick={() => setIsAddModalOpen(true)}
-          isInstallable={!!deferredPrompt}
-          onInstallClick={handleInstallClick}
-        />
-
-        <AnimatePresence>
-          {(showMobileFilters || window.innerWidth >= 640) && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden sm:!h-auto sm:!opacity-100"
-            >
-              <FiltersBar 
-                filters={filters}
-                categories={categories}
-                setFilters={setFilters}
-                resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '', startDate: '', endDate: '', borrowStatus: 'All' })}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
-
-      <input 
-        type="file" 
-        id="file-upload-dialog" 
-        className="hidden" 
-        accept=".csv"
-        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-      />
-
-      {successMsg && (
-        <div className="bg-income/10 border-b border-income/20 py-2 px-6 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-1">
-          <div className="w-2 h-2 rounded-full bg-income animate-pulse" />
-          <span className="text-[11px] font-bold text-income uppercase tracking-widest">{successMsg}</span>
-          <button onClick={() => setSuccessMsg(null)} className="text-[10px] text-text-muted hover:text-text-primary px-2">Dismiss</button>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-expense/10 border-b border-expense/20 py-2 px-6 flex items-center justify-center gap-3">
-          <AlertCircle size={14} className="text-expense" />
-          <span className="text-[11px] font-bold text-expense uppercase tracking-widest">{error}</span>
-          <button onClick={() => syncFinancialData(csvUrl)} className="text-[10px] bg-expense/20 px-2 py-0.5 rounded text-expense hover:bg-expense hover:text-white transition-colors">Retry</button>
-        </div>
-      )}
-
-      <main className={cn(
-        "flex-1 mx-auto w-full p-4 sm:p-6 transition-all duration-500 pb-32",
-        currentView === 'register' ? "flex flex-col gap-2 pt-2 px-3 sm:px-4 lg:px-12 max-w-none" : "flex flex-col gap-8 max-w-[1920px]"
-      )}>
-        {currentView === 'dashboard' && (
-          <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            {/* KPI Grid */}
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Key Performance Indicators</h2>
-                <div className="flex-1 h-px bg-border-main" />
-                <button 
-                  onClick={() => setHideAmounts(!hideAmounts)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-surface-brighter border border-border-main rounded-xl text-text-muted hover:text-text-primary transition-all hover:bg-surface-brightest active:scale-95 group"
-                  title={hideAmounts ? "Show Amounts" : "Hide Amounts"}
-                >
-                  {hideAmounts ? <Eye size={12} className="text-accent-gold" /> : <EyeOff size={12} />}
-                  <span className="text-[9px] font-bold uppercase tracking-wider">{hideAmounts ? "Show Data" : "Hide Data"}</span>
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-                {(loading || !isReady) ? (
-                  Array(6).fill(0).map((_, i) => (
-                    <Skeleton key={i} className="h-[170px]" />
-                  ))
-                ) : (
-                  <>
-                    <KPICard 
-                      label="Total Income" 
-                      value={kpis.income} 
-                      subText={`${filteredData.filter(r => r.type === 'DEBIT').length} income entries`}
-                      icon={<CircleDollarSign className="text-income" />}
-                      colorClass="bg-income"
-                      delay={0.1}
-                      hideAmount={hideAmounts}
-                    />
-                    <KPICard 
-                      label="Total Expenses" 
-                      value={kpis.expense} 
-                      subText={`${filteredData.filter(r => r.type === 'CREDIT').length} expense transactions`}
-                      icon={<Receipt className="text-expense" />}
-                      colorClass="bg-expense"
-                      delay={0.2}
-                      hideAmount={hideAmounts}
-                    />
-                    <KPICard 
-                      label="Net Balance" 
-                      value={kpis.net} 
-                      subText={kpis.net >= 0 ? "✓ Healthy Balance" : "⚠ Deficit Alert"}
-                      icon={<Scale className="text-teal-main" />}
-                      colorClass="bg-teal-main"
-                      delay={0.3}
-                      hideAmount={hideAmounts}
-                    />
-                    <KPICard 
-                      label="Total Cash" 
-                      value={kpis.totalCash} 
-                      subText="Physical cash on hand"
-                      icon={<Handshake className="text-borrow" />}
-                      colorClass="bg-borrow"
-                      delay={0.4}
-                      hideAmount={hideAmounts}
-                    />
-                    <KPICard 
-                      label="Account Balance" 
-                      value={kpis.totalAccounts} 
-                      subText="Funds in digital accounts"
-                      icon={<Landmark className="text-saving" />}
-                      colorClass="bg-saving"
-                      delay={0.5}
-                      hideAmount={hideAmounts}
-                    />
-                    <KPICard 
-                      label="Borrow Net Position" 
-                      value={kpis.borrowNet} 
-                      subText={kpis.borrowNet >= 0 ? "Owed to you" : "You owe"}
-                      icon={kpis.borrowNet >= 0 ? <TrendingUp className="text-accent-gold" /> : <TrendingDown className="text-expense" />}
-                      colorClass={kpis.borrowNet >= 0 ? "bg-accent-gold" : "bg-expense"}
-                      delay={0.6}
-                      hideAmount={hideAmounts}
-                    />
-                  </>
-                )}
-              </div>
-            </section>
-
-            {/* Financial Insights */}
-            <section className="animate-in fade-in slide-in-from-bottom-2 duration-700 delay-100">
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Mobile Balance Insights</h2>
-                <div className="flex-1 h-px bg-border-main" />
-              </div>
-              <FinancialInsights transactions={allData} budgets={budgets} />
-            </section>
-
-            {/* Charts Section */}
-            <section>
-              <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-3 mb-6">
-                <div className="flex items-center gap-3 shrink-0">
-                  <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">
-                    {chartTab === 'overview' ? 'Trend Analytics' : 
-                     chartTab === 'budget' ? 'Budget Tracking' : 
-                     chartTab === 'category' ? 'Category Analysis' : 'Monthly Breakdown'}
-                  </h2>
-                  <div className="flex-1 lg:hidden h-px bg-border-main" />
-                </div>
-                
-                <div className="hidden lg:block flex-1 h-px bg-border-main" />
-                
-                <div className="flex items-center gap-1 bg-surface-brighter p-1 rounded-xl border border-border-main overflow-x-auto scrollbar-none">
-                  <button 
-                    onClick={() => setChartTab('overview')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'overview' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
-                  >
-                    Overview
-                  </button>
-                  <button 
-                    onClick={() => setChartTab('budget')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'budget' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
-                  >
-                    Budget Tracking
-                  </button>
-                  <button 
-                    onClick={() => setChartTab('category')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'category' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
-                  >
-                    Category Analysis
-                  </button>
-                  <button 
-                    onClick={() => setChartTab('month')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'month' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
-                  >
-                    Monthly Breakdown
-                  </button>
-                </div>
-
-                <button 
-                  onClick={() => setIsReportModalOpen(true)}
-                  className="hidden sm:flex items-center gap-2 text-[10px] font-bold bg-white/5 border border-border-main px-3 py-1.5 rounded-lg text-text-muted hover:text-text-primary transition-all active:scale-95 whitespace-nowrap"
-                >
-                  <FileText size={14} className="text-accent-gold" />
-                  <span>Custom Report</span>
-                </button>
-              </div>
-              {chartTab !== 'budget' ? (
-                <Charts transactions={filteredData} allTransactions={allData} budgets={budgets} activeTab={chartTab as any} isDarkMode={isDarkMode} />
-              ) : null}
-            </section>
-
-            {chartTab === 'budget' && (
-              <div className="flex flex-col gap-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* Budget Section */}
-                <section>
-              <BudgetSection 
-                transactions={allData.filter(r => {
-                  const targetYear = filters.year || String(new Date().getFullYear());
-                  const targetMonths = filters.months.length > 0 ? filters.months : [MONTH_NAMES[new Date().getMonth()]];
-                  return r.year === targetYear && targetMonths.includes(r.month);
-                })} 
-                allTransactions={allData}
-                budgets={budgets}
-                onUpdateBudget={(cat, amt) => setBudgets(prev => ({ ...prev, [cat]: amt }))}
-              />
-            </section>
-
-            {/* Deep Analysis */}
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <Receipt size={24} className="text-accent-gold" />
-                <h2 className="text-xl font-bold text-text-primary">Advanced Intelligence</h2>
-              </div>
-              <AnalysisPanels transactions={filteredData} borrowStatus={filters.borrowStatus} budgets={budgets} />
-            </section>
-
-            {/* Smart Tools Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
-              <div className="lg:col-span-2 space-y-8">
-                <RecurringBills transactions={allData} />
-              </div>
-              <div className="space-y-8">
-                <SavingsGoals 
-                  goals={savingsGoals}
-                  onAddGoal={g => setSavingsGoals(prev => [...prev, g])}
-                  onRemoveGoal={id => setSavingsGoals(prev => prev.filter(g => g.id !== id))}
-                  onUpdateGoal={(id, amt) => {
-                    setSavingsGoals(prev => prev.map(g => g.id === id ? { ...g, saved: g.saved + amt } : g));
-                  }}
-                  availableBalance={kpis.net - savingsGoals.reduce((s, g) => s + g.saved, 0)}
-                />
-                <WealthTracker 
-                  assets={wealthAssets}
-                  onAddAsset={a => setWealthAssets(prev => [...prev, a])}
-                  onRemoveAsset={id => setWealthAssets(prev => prev.filter(a => a.id !== id))}
-                />
-                <div className="dashboard-card bg-surface-brighter border-dashed border-border-main p-6 flex flex-col items-center justify-center text-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-accent-gold/5 flex items-center justify-center text-accent-gold/40">
-                    <BrainCircuit size={20} />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">Neural Engine Optimization</h4>
-                    <p className="text-[9px] text-text-muted/60 leading-relaxed">System is continuously learning from your spending patterns to improve predictive accuracy.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    )}
-
-        {currentView === 'register' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 min-h-[calc(100vh-250px)]">
-            {/* Transaction Table */}
-            <section className="mb-2">
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Master Ledger</h2>
-                <div className="flex-1 h-px bg-border-main" />
-              </div>
-              <TransactionTable 
-                transactions={filteredData} 
-                onGenerateReport={handleReportGenerate}
-              />
-            </section>
-          </div>
-        )}
-      </main>
-
-      <footer className="border-t border-border-main p-8 text-center bg-surface-brighter selection:bg-accent-gold/10 mt-auto">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-[10px] text-text-muted font-mono tracking-widest uppercase mb-2">
-            Professional Fiscal Environment &nbsp;·&nbsp; Account 2026 Engine
-          </div>
-          <div className="text-[9px] text-text-secondary opacity-70">
-            Secure browser-side processing. Built for high-frequency financial monitoring.
-          </div>
-        </div>
-      </footer>
-
-      <ConnectModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConnect={handleConnect}
-        onFileUpload={handleFileUpload}
-        currentSyncUrl={syncUrl}
-      />
-
-      <AddTransactionModal 
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleAddTransaction}
-        transactions={allData}
-      />
-
-      <ReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        onGenerate={handleReportGenerate}
-        transactions={allData}
-      />
-
-      <AnimatePresence>
-        {loading && (
+      <AnimatePresence mode="wait">
+        {loading ? (
           <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            key="loading-screen"
+            initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
             className="fixed inset-0 z-[100] bg-bg flex flex-col items-center justify-center p-6 gap-6"
           >
             <div className="h-24 sm:h-32 flex items-center justify-center">
@@ -890,7 +568,6 @@ export default function App() {
                 alt="Account" 
                 className="h-full w-auto object-contain opacity-80" 
                 onError={(e) => {
-                  // Fallback for broken images on some hosting environments
                   e.currentTarget.style.display = 'none';
                 }}
               />
@@ -930,8 +607,339 @@ export default function App() {
               </div>
             )}
           </motion.div>
+        ) : (
+          <motion.div 
+            key="app-content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex flex-col min-h-screen"
+          >
+            <header className="sticky top-0 z-50">
+              <Navbar 
+                onConnectClick={() => setIsModalOpen(true)}
+                onUploadClick={() => document.getElementById('file-upload-dialog')?.click()}
+                onExportCSV={handleExport}
+                onReportClick={() => setIsReportModalOpen(true)}
+                onRefreshClick={() => syncFinancialData(csvUrl)}
+                isDarkMode={isDarkMode}
+                onThemeToggle={() => setIsDarkMode(!isDarkMode)}
+                lastUpdated={lastUpdated}
+                status={(error || dataSource === 'file') ? 'offline' : 'online'}
+                activeView={currentView}
+                onViewChange={setCurrentView}
+                onToggleFilters={() => setShowMobileFilters(!showMobileFilters)}
+                showFilters={showMobileFilters}
+                onAddClick={() => setIsAddModalOpen(true)}
+                isInstallable={!!deferredPrompt}
+                onInstallClick={handleInstallClick}
+              />
+
+              <AnimatePresence>
+                {(showMobileFilters || window.innerWidth >= 640) && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden sm:!h-auto sm:!opacity-100"
+                  >
+                    <FiltersBar 
+                      filters={filters}
+                      categories={categories}
+                      setFilters={setFilters}
+                      resetFilters={() => setFilters({ months: [], year: '', category: '', type: '', channel: '', search: '', startDate: '', endDate: '', borrowStatus: 'All' })}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </header>
+
+            <input 
+              type="file" 
+              id="file-upload-dialog" 
+              className="hidden" 
+              accept=".csv"
+              onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+            />
+
+            {successMsg && (
+              <div className="bg-income/10 border-b border-income/20 py-2 px-6 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-1">
+                <div className="w-2 h-2 rounded-full bg-income animate-pulse" />
+                <span className="text-[11px] font-bold text-income uppercase tracking-widest">{successMsg}</span>
+                <button onClick={() => setSuccessMsg(null)} className="text-[10px] text-text-muted hover:text-text-primary px-2">Dismiss</button>
+              </div>
+            )}
+
+            {error && (
+              <div className="bg-expense/10 border-b border-expense/20 py-2 px-6 flex items-center justify-center gap-3">
+                <AlertCircle size={14} className="text-expense" />
+                <span className="text-[11px] font-bold text-expense uppercase tracking-widest">{error}</span>
+                <button onClick={() => syncFinancialData(csvUrl)} className="text-[10px] bg-expense/20 px-2 py-0.5 rounded text-expense hover:bg-expense hover:text-white transition-colors">Retry</button>
+              </div>
+            )}
+
+            <main className={cn(
+              "flex-1 mx-auto w-full p-4 sm:p-6 transition-all duration-500 pb-32",
+              currentView === 'register' ? "flex flex-col gap-2 pt-2 px-3 sm:px-4 lg:px-12 max-w-none" : "flex flex-col gap-8 max-w-[1920px]"
+            )}>
+              {currentView === 'dashboard' && (
+                <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  {/* KPI Grid */}
+                  <section>
+                    <div className="flex items-center gap-3 mb-6">
+                      <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Key Performance Indicators</h2>
+                      <div className="flex-1 h-px bg-border-main" />
+                      <button 
+                        onClick={() => setHideAmounts(!hideAmounts)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-surface-brighter border border-border-main rounded-xl text-text-muted hover:text-text-primary transition-all hover:bg-surface-brightest active:scale-95 group"
+                        title={hideAmounts ? "Show Amounts" : "Hide Amounts"}
+                      >
+                        {hideAmounts ? <Eye size={12} className="text-accent-gold" /> : <EyeOff size={12} />}
+                        <span className="text-[9px] font-bold uppercase tracking-wider">{hideAmounts ? "Show Data" : "Hide Data"}</span>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+                      {(!isReady) ? (
+                        Array(6).fill(0).map((_, i) => (
+                          <Skeleton key={i} className="h-[170px]" />
+                        ))
+                      ) : (
+                        <>
+                          <KPICard 
+                            label="Total Income" 
+                            value={kpis.income} 
+                            subText={`${filteredData.filter(r => r.type === 'DEBIT').length} income entries`}
+                            icon={<CircleDollarSign className="text-income" />}
+                            colorClass="bg-income"
+                            delay={0.1}
+                            hideAmount={hideAmounts}
+                          />
+                          <KPICard 
+                            label="Total Expenses" 
+                            value={kpis.expense} 
+                            subText={`${filteredData.filter(r => r.type === 'CREDIT').length} expense transactions`}
+                            icon={<Receipt className="text-expense" />}
+                            colorClass="bg-expense"
+                            delay={0.2}
+                            hideAmount={hideAmounts}
+                          />
+                          <KPICard 
+                            label="Net Balance" 
+                            value={kpis.net} 
+                            subText={kpis.net >= 0 ? "✓ Healthy Balance" : "⚠ Deficit Alert"}
+                            icon={<Scale className="text-teal-main" />}
+                            colorClass="bg-teal-main"
+                            delay={0.3}
+                            hideAmount={hideAmounts}
+                          />
+                          <KPICard 
+                            label="Total Cash" 
+                            value={kpis.totalCash} 
+                            subText="Physical cash on hand"
+                            icon={<Handshake className="text-borrow" />}
+                            colorClass="bg-borrow"
+                            delay={0.4}
+                            hideAmount={hideAmounts}
+                          />
+                          <KPICard 
+                            label="Account Balance" 
+                            value={kpis.totalAccounts} 
+                            subText="Funds in digital accounts"
+                            icon={<Landmark className="text-saving" />}
+                            colorClass="bg-saving"
+                            delay={0.5}
+                            hideAmount={hideAmounts}
+                          />
+                          <KPICard 
+                            label="Borrow Net Position" 
+                            value={kpis.borrowNet} 
+                            subText={kpis.borrowNet >= 0 ? "Owed to you" : "You owe"}
+                            icon={kpis.borrowNet >= 0 ? <TrendingUp className="text-accent-gold" /> : <TrendingDown className="text-expense" />}
+                            colorClass={kpis.borrowNet >= 0 ? "bg-accent-gold" : "bg-expense"}
+                            delay={0.6}
+                            hideAmount={hideAmounts}
+                          />
+                        </>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Financial Insights */}
+                  <section className="animate-in fade-in slide-in-from-bottom-2 duration-700 delay-100">
+                    <div className="flex items-center gap-3 mb-6">
+                      <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Mobile Balance Insights</h2>
+                      <div className="flex-1 h-px bg-border-main" />
+                    </div>
+                    <FinancialInsights transactions={allData} budgets={budgets} />
+                  </section>
+
+                  {/* Charts Section */}
+                  <section>
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-3 mb-6">
+                      <div className="flex items-center gap-3 shrink-0">
+                        <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">
+                          {chartTab === 'overview' ? 'Trend Analytics' : 
+                           chartTab === 'budget' ? 'Budget Tracking' : 
+                           chartTab === 'category' ? 'Category Analysis' : 'Monthly Breakdown'}
+                        </h2>
+                        <div className="flex-1 lg:hidden h-px bg-border-main" />
+                      </div>
+                      
+                      <div className="hidden lg:block flex-1 h-px bg-border-main" />
+                      
+                      <div className="flex items-center gap-1 bg-surface-brighter p-1 rounded-xl border border-border-main overflow-x-auto scrollbar-none">
+                        <button 
+                          onClick={() => setChartTab('overview')}
+                          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'overview' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
+                        >
+                          Overview
+                        </button>
+                        <button 
+                          onClick={() => setChartTab('budget')}
+                          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'budget' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
+                        >
+                          Budget Tracking
+                        </button>
+                        <button 
+                          onClick={() => setChartTab('category')}
+                          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'category' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
+                        >
+                          Category Analysis
+                        </button>
+                        <button 
+                          onClick={() => setChartTab('month')}
+                          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartTab === 'month' ? 'bg-accent-gold text-black' : 'text-text-muted hover:text-text-primary'}`}
+                        >
+                          Monthly Breakdown
+                        </button>
+                      </div>
+
+                      <button 
+                        onClick={() => setIsReportModalOpen(true)}
+                        className="hidden sm:flex items-center gap-2 text-[10px] font-bold bg-white/5 border border-border-main px-3 py-1.5 rounded-lg text-text-muted hover:text-text-primary transition-all active:scale-95 whitespace-nowrap"
+                      >
+                        <FileText size={14} className="text-accent-gold" />
+                        <span>Custom Report</span>
+                      </button>
+                    </div>
+                    {chartTab !== 'budget' ? (
+                      <Charts transactions={filteredData} allTransactions={allData} budgets={budgets} activeTab={chartTab as any} isDarkMode={isDarkMode} />
+                    ) : null}
+                  </section>
+
+                  {chartTab === 'budget' && (
+                    <div className="flex flex-col gap-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                      {/* Budget Section */}
+                      <section>
+                    <BudgetSection 
+                      transactions={allData.filter(r => {
+                        const targetYear = filters.year || String(new Date().getFullYear());
+                        const targetMonths = filters.months.length > 0 ? filters.months : [MONTH_NAMES[new Date().getMonth()]];
+                        return r.year === targetYear && targetMonths.includes(r.month);
+                      })} 
+                      allTransactions={allData}
+                      budgets={budgets}
+                      onUpdateBudget={(cat, amt) => setBudgets(prev => ({ ...prev, [cat]: amt }))}
+                    />
+                  </section>
+
+                  {/* Deep Analysis */}
+                  <section>
+                    <div className="flex items-center gap-3 mb-6">
+                      <Receipt size={24} className="text-accent-gold" />
+                      <h2 className="text-xl font-bold text-text-primary">Advanced Intelligence</h2>
+                    </div>
+                    <AnalysisPanels transactions={filteredData} borrowStatus={filters.borrowStatus} budgets={budgets} />
+                  </section>
+
+                  {/* Smart Tools Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
+                    <div className="lg:col-span-2 space-y-8">
+                      <RecurringBills transactions={allData} />
+                    </div>
+                    <div className="space-y-8">
+                      <SavingsGoals 
+                        goals={savingsGoals}
+                        onAddGoal={g => setSavingsGoals(prev => [...prev, g])}
+                        onRemoveGoal={id => setSavingsGoals(prev => prev.filter(g => g.id !== id))}
+                        onUpdateGoal={(id, amt) => {
+                          setSavingsGoals(prev => prev.map(g => g.id === id ? { ...g, saved: g.saved + amt } : g));
+                        }}
+                        availableBalance={kpis.net - savingsGoals.reduce((s, g) => s + g.saved, 0)}
+                      />
+                      <WealthTracker 
+                        assets={wealthAssets}
+                        onAddAsset={a => setWealthAssets(prev => [...prev, a])}
+                        onRemoveAsset={id => setWealthAssets(prev => prev.filter(a => a.id !== id))}
+                      />
+                      <div className="dashboard-card bg-surface-brighter border-dashed border-border-main p-6 flex flex-col items-center justify-center text-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-accent-gold/5 flex items-center justify-center text-accent-gold/40">
+                          <BrainCircuit size={20} />
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">Neural Engine Optimization</h4>
+                          <p className="text-[9px] text-text-muted/60 leading-relaxed">System is continuously learning from your spending patterns to improve predictive accuracy.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentView === 'register' && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 min-h-[calc(100vh-250px)]">
+              {/* Transaction Table */}
+              <section className="mb-2">
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[3px]">Master Ledger</h2>
+                  <div className="flex-1 h-px bg-border-main" />
+                </div>
+                <TransactionTable 
+                  transactions={filteredData} 
+                  onGenerateReport={handleReportGenerate}
+                />
+              </section>
+            </div>
+          )}
+        </main>
+
+          <footer className="border-t border-border-main p-8 text-center bg-surface-brighter selection:bg-accent-gold/10 mt-auto">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-[10px] text-text-muted font-mono tracking-widest uppercase mb-2">
+                Professional Fiscal Environment &nbsp;·&nbsp; Account 2026 Engine
+              </div>
+              <div className="text-[9px] text-text-secondary opacity-70">
+                Secure browser-side processing. Built for high-frequency financial monitoring.
+              </div>
+            </div>
+          </footer>
+          </motion.div>
         )}
       </AnimatePresence>
+
+      <ConnectModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConnect={handleConnect}
+        onFileUpload={handleFileUpload}
+        currentSyncUrl={syncUrl}
+      />
+
+      <AddTransactionModal 
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddTransaction}
+        transactions={allData}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        onGenerate={handleReportGenerate}
+        transactions={allData}
+      />
     </div>
   );
 }

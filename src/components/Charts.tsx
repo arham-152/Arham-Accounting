@@ -71,7 +71,10 @@ const ChartCard: React.FC<{
       )}
     </div>
     <p className="text-[10px] sm:text-[11px] text-text-muted mb-6">{sub}</p>
-    <div className="relative h-[240px] sm:h-[280px]" style={height ? { height: `calc(${height}px * 0.85)` } : undefined}>
+    <div 
+      className="relative w-full h-[240px] sm:h-[280px] overflow-hidden" 
+      style={height ? { height: `calc(${height}px * 0.85)`, minHeight: '200px' } : { minHeight: '240px' }}
+    >
       {children}
     </div>
   </motion.div>
