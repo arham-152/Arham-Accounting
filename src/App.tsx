@@ -14,7 +14,7 @@ import { SavingsGoals, SavingsGoal } from './components/SavingsGoals';
 import { RecurringBills } from './components/RecurringBills';
 import { ConnectModal } from './components/ConnectModal';
 import { ReportModal } from './components/ReportModal';
-import { AddTransactionModal } from './components/AddTransactionModal';
+import { AddTransactionForm } from './components/AddTransactionForm';
 import { generatePDFReport, generateExcelReport } from './services/reportService';
 import { suggestCategory, batchCategorize } from './services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,17 +28,17 @@ const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
 export default function App() {
   const [allData, setAllData] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('—');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [chartTab, setChartTab] = useState<'overview' | 'budget' | 'category' | 'month'>('overview');
-  const [currentView, setCurrentView] = useState<'dashboard' | 'register'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'register' | 'quick-entry'>('dashboard');
   const [csvUrl, setCsvUrl] = useState(() => localStorage.getItem('account2026_csv_url') || '');
   const [syncUrl, setSyncUrl] = useState(() => localStorage.getItem('account2026_sync_url') || '');
   const [dataSource, setDataSource] = useState<'live' | 'file'>(() => localStorage.getItem('account2026_csv_url') ? 'live' : 'file');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('account2026_theme');
@@ -178,10 +178,15 @@ export default function App() {
   const syncFinancialData = async (url: string) => {
     if (!url) {
       setLoading(false);
+      setRefreshing(false);
       return;
     }
     try {
-      setLoading(true);
+      if (allData.length > 0) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       
       // Abort controller for timeout
@@ -284,6 +289,7 @@ export default function App() {
       setError(isTimeout ? "Sync Timeout: Connection to Google Sheets is taking too long." : err.message);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -575,7 +581,6 @@ export default function App() {
           onViewChange={setCurrentView}
           onToggleFilters={() => setShowMobileFilters(!showMobileFilters)}
           showFilters={showMobileFilters}
-          onAddClick={() => setIsAddModalOpen(true)}
           isInstallable={!!deferredPrompt}
           onInstallClick={handleInstallClick}
         />
@@ -607,6 +612,13 @@ export default function App() {
         onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
       />
 
+      {refreshing && (
+        <div className="fixed top-20 right-6 z-[60] bg-surface-brighter border border-border-main px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-right-4">
+          <div className="w-3 h-3 border-2 border-accent-gold/20 border-t-accent-gold rounded-full animate-spin" />
+          <span className="text-[10px] font-bold text-text-primary uppercase tracking-widest">Updating Ledger...</span>
+        </div>
+      )}
+
       {successMsg && (
         <div className="bg-income/10 border-b border-income/20 py-2 px-6 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-1">
           <div className="w-2 h-2 rounded-full bg-income animate-pulse" />
@@ -625,8 +637,29 @@ export default function App() {
 
       <main className={cn(
         "flex-1 max-w-[1600px] mx-auto w-full p-4 sm:p-6 transition-all duration-500 pb-32",
-        currentView === 'register' ? "flex flex-col gap-0 pt-1 px-3 sm:px-4 lg:px-8" : "flex flex-col gap-8"
+        (currentView === 'register' || currentView === 'quick-entry') ? "flex flex-col gap-0 pt-1 px-3 sm:px-4 lg:px-8" : "flex flex-col gap-8"
       )}>
+        {currentView === 'quick-entry' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 h-[calc(100vh-140px)]">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[4px]">Direct Ledger Entry</h2>
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="text-[10px] font-bold text-accent-gold uppercase tracking-widest hover:underline"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+            <div className="bg-surface border border-border-main rounded-3xl overflow-hidden shadow-2xl h-full">
+              <AddTransactionForm 
+                onSubmit={handleAddTransaction}
+                transactions={allData}
+                onCancel={() => setCurrentView('register')}
+              />
+            </div>
+          </div>
+        )}
+
         {currentView === 'dashboard' && (
           <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* KPI Grid */}
@@ -867,13 +900,6 @@ export default function App() {
         onConnect={handleConnect}
         onFileUpload={handleFileUpload}
         currentSyncUrl={syncUrl}
-      />
-
-      <AddTransactionModal 
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleAddTransaction}
-        transactions={allData}
       />
 
       <ReportModal

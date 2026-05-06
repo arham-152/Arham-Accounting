@@ -13,11 +13,10 @@ interface NavbarProps {
   onThemeToggle: () => void;
   lastUpdated: string;
   status?: 'online' | 'offline';
-  activeView: 'dashboard' | 'register';
-  onViewChange: (view: 'dashboard' | 'register') => void;
+  activeView: 'dashboard' | 'register' | 'quick-entry';
+  onViewChange: (view: 'dashboard' | 'register' | 'quick-entry') => void;
   onToggleFilters: () => void;
   showFilters: boolean;
-  onAddClick: () => void;
   isInstallable?: boolean;
   onInstallClick?: () => void;
 }
@@ -36,7 +35,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onViewChange,
   onToggleFilters,
   showFilters,
-  onAddClick,
   isInstallable,
   onInstallClick
 }) => {
@@ -136,8 +134,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           
           {/* Mobile Quick Add Integrated Button */}
           <button 
-            onClick={onAddClick}
-            className="sm:hidden flex items-center justify-center w-10 h-10 bg-accent-gold text-black rounded-lg ml-1 shadow-lg active:scale-95 transition-transform shrink-0"
+            onClick={() => onViewChange('quick-entry')}
+            className={cn(
+              "sm:hidden flex items-center justify-center w-10 h-10 rounded-lg ml-1 shadow-lg active:scale-95 transition-transform shrink-0",
+              activeView === 'quick-entry' ? "bg-black text-accent-gold" : "bg-accent-gold text-black"
+            )}
             aria-label="Quick Entry"
           >
             <Plus size={24} strokeWidth={3} />
@@ -175,8 +176,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           <button 
-            onClick={onAddClick}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-accent-gold/30 bg-accent-gold/5 text-accent-gold text-[11px] font-bold transition-all hover:bg-accent-gold hover:text-black active:scale-95 shadow-sm shadow-accent-gold/5"
+            onClick={() => onViewChange('quick-entry')}
+            className={cn(
+              "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all active:scale-95 shadow-sm",
+              activeView === 'quick-entry' 
+                ? "bg-accent-gold border-accent-gold text-black"
+                : "border-accent-gold/30 bg-accent-gold/5 text-accent-gold hover:bg-accent-gold hover:text-black shadow-accent-gold/5"
+            )}
           >
             <PlusCircle size={14} />
             <span className="hidden lg:inline">Quick Entry</span>
